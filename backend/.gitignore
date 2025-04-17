@@ -1,0 +1,19 @@
+# Node modules
+node_modules/
+
+# 환경 변수
+.env
+
+# 빌드 결과물 (TypeScript)
+dist/
+*.js
+*.js.map
+
+# 로그 파일
+*.log
+logs/
+npm-debug.log*
+
+# OS/System
+.DS_Store
+Thumbs.db

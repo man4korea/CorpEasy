@@ -16,28 +16,30 @@ import { ClaudeProvider } from './contexts/ClaudeContext';
 const App: React.FC = () => {
   return (
     <Router>
-      <div className="flex h-screen">
-        <Sidebar />
-        <main className="flex-1 overflow-auto">
-          <div className="p-4 text-center">
-            <h1 className="text-2xl font-bold">Hello CorpEasy! 🔥 배포 테스트 완료!</h1>
-          </div>
-          <Routes>
-            <Route path="/" element={<AnalyzeInputPage />} />
-            <Route path="/claude" element={
-              <ClaudeProvider>
-                <Claude />
-              </ClaudeProvider>
-            } />
-            <Route path="/gemini" element={<GeminiPage />} />
-            <Route path="/gpt35" element={<GPT35 />} />
-            <Route path="/gpt4" element={<GPT4 />} />
-            <Route path="/grok" element={<GrokPage />} />
-            <Route path="/analyze" element={<AnalyzeInputPage />} />
-          </Routes>
-        </main>
+      <>
+        <div className="flex h-screen">
+          <Sidebar />
+          <main className="flex-1 overflow-auto">
+            <div className="p-4 text-center">
+              <h1 className="text-2xl font-bold">Hello CorpEasy! 🔥 배포 테스트 완료!</h1>
+            </div>
+            <Routes>
+              <Route path="/" element={<AnalyzeInputPage />} />
+              <Route path="/claude" element={
+                <ClaudeProvider>
+                  <Claude />
+                </ClaudeProvider>
+              } />
+              <Route path="/gemini" element={<GeminiPage />} />
+              <Route path="/gpt35" element={<GPT35 />} />
+              <Route path="/gpt4" element={<GPT4 />} />
+              <Route path="/grok" element={<GrokPage />} />
+              <Route path="/analyze" element={<AnalyzeInputPage />} />
+            </Routes>
+          </main>
+        </div>
         <Coji />
-      </div>
+      </>
     </Router>
   );
 };

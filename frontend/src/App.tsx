@@ -4,7 +4,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
-import Layout from './components/Layout';
 import Claude from './pages/Claude';
 import GeminiPage from './pages/GeminiPage';
 import GPT35 from './pages/GPT35';
@@ -12,8 +11,6 @@ import GPT4 from './pages/GPT4';
 import GrokPage from './pages/GrokPage';
 import AnalyzeInputPage from './pages/AnalyzeInputPage';
 import { Coji } from './pages/Coji';
-//import FirestoreTest from './components/FirestoreTest';
-
 import { ClaudeProvider } from './contexts/ClaudeContext';
 
 const App: React.FC = () => {
@@ -21,7 +18,10 @@ const App: React.FC = () => {
     <Router>
       <div className="flex h-screen">
         <Sidebar />
-        <Layout>
+        <main className="flex-1 overflow-auto">
+          <div className="p-4 text-center">
+            <h1 className="text-2xl font-bold">Hello CorpEasy! 🔥 배포 테스트 완료!</h1>
+          </div>
           <Routes>
             <Route path="/" element={<AnalyzeInputPage />} />
             <Route path="/claude" element={
@@ -35,7 +35,7 @@ const App: React.FC = () => {
             <Route path="/grok" element={<GrokPage />} />
             <Route path="/analyze" element={<AnalyzeInputPage />} />
           </Routes>
-        </Layout>
+        </main>
         <Coji />
       </div>
     </Router>

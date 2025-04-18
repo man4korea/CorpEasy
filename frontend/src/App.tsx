@@ -11,6 +11,7 @@ import GPT35 from './pages/GPT35';
 import GPT4 from './pages/GPT4';
 import GrokPage from './pages/GrokPage';
 import AnalyzeInputPage from './pages/AnalyzeInputPage';
+import { Coji } from './pages/Coji';
 //import FirestoreTest from './components/FirestoreTest';
 
 import { ClaudeProvider } from './contexts/ClaudeContext';
@@ -35,6 +36,7 @@ const App: React.FC = () => {
             <Route path="/analyze" element={<AnalyzeInputPage />} />
           </Routes>
         </Layout>
+        <Coji />
       </div>
     </Router>
   );

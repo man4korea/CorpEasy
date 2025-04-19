@@ -1,5 +1,5 @@
 // 📁 frontend/src/components/Sidebar.tsx
-// Create at 2504191230
+// Create at 2504201425 Ver1.2
 
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
@@ -17,7 +17,8 @@ import {
   XMarkIcon,
   CommandLineIcon,
   BriefcaseIcon,
-  UserGroupIcon
+  UserGroupIcon,
+  BeakerIcon // API 테스트 아이콘 추가
 } from '@heroicons/react/24/outline';
 
 interface SidebarProps {
@@ -171,10 +172,115 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
         {
           name: '알림 설정',
           to: '/settings/notifications',
+        },
+        {
+          name: 'API 테스트',
+          to: '/settings/api-test',
+          submenu: [
+            {
+              name: 'GPT-3.5',
+              to: '/settings/api-test/gpt35',
+            },
+            {
+              name: 'GPT-4',
+              to: '/settings/api-test/gpt4',
+            },
+            {
+              name: 'Claude',
+              to: '/settings/api-test/claude',
+            },
+            {
+              name: 'Claude Haiku',
+              to: '/settings/api-test/haiku',
+            },
+            {
+              name: 'Gemini',
+              to: '/settings/api-test/gemini',
+            }
+          ]
+        }
+      ]
+    },
+    // API 테스트 전용 메뉴 - 개발용 (별도로 분리)
+    {
+      name: 'API 테스트 (개발자)',
+      to: '/api-test',
+      icon: <BeakerIcon className="h-5 w-5" />,
+      submenu: [
+        {
+          name: 'GPT-3.5',
+          to: '/api-test/gpt35',
+        },
+        {
+          name: 'GPT-4',
+          to: '/api-test/gpt4',
+        },
+        {
+          name: 'Claude',
+          to: '/api-test/claude',
+        },
+        {
+          name: 'Claude Haiku',
+          to: '/api-test/haiku',
+        },
+        {
+          name: 'Gemini',
+          to: '/api-test/gemini',
         }
       ]
     }
   ];
+
+  // 중첩 서브메뉴 렌더링 함수
+  const renderSubmenu = (submenu: any[], level: number = 1) => {
+    return (
+      <div className={`ml-${level * 6} mt-1 mb-2 space-y-1`}>
+        {submenu.map((subItem, subIndex) => (
+          <div key={subIndex}>
+            {subItem.submenu ? (
+              // 서브메뉴가 있는 경우
+              <>
+                <div 
+                  className={`flex items-center justify-between px-3 py-2 rounded-md text-sm cursor-pointer ${
+                    isActive(subItem.to) 
+                      ? 'bg-blue-50 text-blue-500' 
+                      : 'text-gray-700 hover:bg-gray-50'
+                  }`}
+                  onClick={() => toggleMenu(subItem.name)}
+                >
+                  <span>{subItem.name}</span>
+                  <ChevronRightIcon 
+                    className={`w-4 h-4 transition-transform ${
+                      expandedMenus.includes(subItem.name) ? 'rotate-90' : ''
+                    }`} 
+                  />
+                </div>
+                {expandedMenus.includes(subItem.name) && renderSubmenu(subItem.submenu, level + 1)}
+              </>
+            ) : (
+              // 서브메뉴가 없는 경우
+              <Link
+                to={subItem.to}
+                className={`flex items-center justify-between px-3 py-2 rounded-md text-sm ${
+                  isActive(subItem.to) 
+                    ? 'bg-blue-50 text-blue-500' 
+                    : 'text-gray-700 hover:bg-gray-50'
+                }`}
+                onClick={() => setIsOpen(false)}
+              >
+                <span>{subItem.name}</span>
+                {subItem.badge && (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                    {subItem.badge}
+                  </span>
+                )}
+              </Link>
+            )}
+          </div>
+        ))}
+      </div>
+    );
+  };
 
   return (
     <div 
@@ -237,30 +343,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
               )}
             </div>
             
-            {/* 서브메뉴 */}
-            {item.submenu && expandedMenus.includes(item.name) && (
-              <div className="ml-6 mt-1 mb-2 space-y-1">
-                {item.submenu.map((subItem, subIndex) => (
-                  <Link
-                    key={subIndex}
-                    to={subItem.to}
-                    className={`flex items-center justify-between px-3 py-2 rounded-md text-sm ${
-                      isActive(subItem.to) 
-                        ? 'bg-blue-50 text-blue-500' 
-                        : 'text-gray-700 hover:bg-gray-50'
-                    }`}
-                    onClick={() => setIsOpen(false)}
-                  >
-                    <span>{subItem.name}</span>
-                    {subItem.badge && (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                        {subItem.badge}
-                      </span>
-                    )}
-                  </Link>
-                ))}
-              </div>
-            )}
+            {/* 서브메뉴 - 중첩 메뉴 지원 */}
+            {item.submenu && expandedMenus.includes(item.name) && renderSubmenu(item.submenu)}
           </div>
         ))}
       </nav>

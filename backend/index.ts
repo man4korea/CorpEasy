@@ -1,5 +1,5 @@
 // 📁 backend/index.ts
-// Create at 2504191535
+// Create at 2504201440 Ver1.1
 
 import express from 'express';
 import cors from 'cors';
@@ -22,13 +22,14 @@ const __dirname = path.dirname(__filename);
 // 라우터 import
 import testRouter from './routes/test-router';
 import claudeRouter from './routes/claude-router';
-import claudeStreamRouter from './routes/claude-stream-router'; // 새로운 스트리밍 라우터 추가
+import claudeStreamRouter from './routes/claude-stream-router'; // 스트리밍 라우터
+import claudeHaikuRouter from './routes/claude-haiku-router'; // Haiku 라우터 추가
 import geminiRouter from './routes/gemini-router';
 import grokRouter from './routes/grok-router';
 import youtubeRouter from './routes/youtube-router';
 import aiRouter from './routes/ai-router';
 import openaiRouter from './routes/openai-router';
-import cojiRouter from './routes/coji-router'; // 코지 라우터 추가
+import cojiRouter from './routes/coji-router'; // 코지 라우터
 
 // 환경변수 로드
 dotenv.config();
@@ -78,13 +79,14 @@ async function initializeServer() {
     // API 라우트
     app.use('/api/test', testRouter);
     app.use('/api/claude', claudeRouter);
-    app.use('/api/claude/stream', claudeStreamRouter); // 스트리밍 라우터 추가
+    app.use('/api/claude/stream', claudeStreamRouter); // 스트리밍 라우터
+    app.use('/api/claude-haiku', claudeHaikuRouter); // Haiku 라우터 추가
     app.use('/api/gemini', geminiRouter);
     app.use('/api/grok', grokRouter);
     app.use('/api/youtube', youtubeRouter);
     app.use('/api/ai', aiRouter);
     app.use('/api/openai', openaiRouter);
-    app.use('/api/coji', cojiRouter); // 코지 라우터 등록
+    app.use('/api/coji', cojiRouter); // 코지 라우터
     
     // 캐시 초기화 (안전하게 시도)
     try {
@@ -171,6 +173,13 @@ async function initializeServer() {
         cache: {
           type: cacheType,
           status: 'operational'
+        },
+        apis: {
+          claude: true,
+          claudeHaiku: true, // Haiku API 추가
+          gemini: true,
+          grok: true,
+          openai: true
         }
       });
     });

@@ -1,5 +1,5 @@
 // 📁 frontend/src/App.tsx
-// Create at 2504191740
+// Create at 2504201520 Ver1.3
 
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
@@ -11,6 +11,13 @@ import ContentAnalysisPage from './pages/ContentAnalysisPage';
 import BlogDetailPage from './pages/BlogDetailPage';
 import Dashboard from './pages/Dashboard';
 import { Coji } from './pages/Coji';
+
+// API 테스트 페이지 import
+import GPT35 from './pages/GPT35';
+import GPT4 from './pages/GPT4';
+import GeminiPage from './pages/GeminiPage'; // 업데이트된 Gemini 페이지
+import Claude from './pages/Claude';
+import HaikuPage from './pages/HaikuPage'; // Haiku 페이지
 
 // 신규 추가된 페이지 
 const PromptGenerator = () => <div className="container mx-auto p-6"><h1 className="text-2xl font-bold mb-4">프롬프트 생성기</h1><p>효과적인 AI 프롬프트를 자동으로 생성하는 도구입니다.</p></div>;
@@ -27,6 +34,46 @@ const DecisionSupport = () => <div className="container mx-auto p-6"><h1 classNa
 const ChatbotBuilder = () => <div className="container mx-auto p-6"><h1 className="text-2xl font-bold mb-4">AI 비서 생성기</h1><p>맞춤형 AI 챗봇 생성 도구입니다.</p></div>;
 const AiHelper = () => <div className="container mx-auto p-6"><h1 className="text-2xl font-bold mb-4">AI 활용 도우미</h1><p>AI 도구 활용 가이드입니다.</p></div>;
 const Settings = () => <div className="container mx-auto p-6"><h1 className="text-2xl font-bold mb-4">설정</h1><p>시스템 설정 페이지입니다.</p></div>;
+
+// API 테스트 메인 페이지
+const ApiTestDashboard = () => (
+  <div className="container mx-auto p-6">
+    <h1 className="text-2xl font-bold mb-4">API 테스트 대시보드</h1>
+    <p className="mb-6">다양한 AI API의 기능 및 성능을 테스트할 수 있는 페이지입니다.</p>
+    
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="bg-white p-6 rounded-lg shadow-md">
+        <h2 className="text-xl font-semibold mb-2 text-blue-600">OpenAI GPT-3.5</h2>
+        <p className="text-gray-600 mb-4">빠르고 비용 효율적인 모델로 일반적인 질문과 답변에 적합합니다.</p>
+        <a href="/api-test/gpt35" className="text-blue-500 hover:text-blue-700 font-medium">테스트 하기 →</a>
+      </div>
+      
+      <div className="bg-white p-6 rounded-lg shadow-md">
+        <h2 className="text-xl font-semibold mb-2 text-purple-600">OpenAI GPT-4</h2>
+        <p className="text-gray-600 mb-4">고급 추론과 복잡한 작업에 뛰어난 성능을 제공합니다.</p>
+        <a href="/api-test/gpt4" className="text-purple-500 hover:text-purple-700 font-medium">테스트 하기 →</a>
+      </div>
+      
+      <div className="bg-white p-6 rounded-lg shadow-md">
+        <h2 className="text-xl font-semibold mb-2 text-indigo-600">Anthropic Claude</h2>
+        <p className="text-gray-600 mb-4">긴 맥락 처리와 자연스러운 대화에 최적화되어 있습니다.</p>
+        <a href="/api-test/claude" className="text-indigo-500 hover:text-indigo-700 font-medium">테스트 하기 →</a>
+      </div>
+      
+      <div className="bg-white p-6 rounded-lg shadow-md">
+        <h2 className="text-xl font-semibold mb-2 text-green-600">Google Gemini</h2>
+        <p className="text-gray-600 mb-4">여러 Gemini 모델을 선택하여 테스트할 수 있습니다.</p>
+        <a href="/api-test/gemini" className="text-green-500 hover:text-green-700 font-medium">테스트 하기 →</a>
+      </div>
+      
+      <div className="bg-white p-6 rounded-lg shadow-md">
+        <h2 className="text-xl font-semibold mb-2 text-cyan-600">Claude Haiku</h2>
+        <p className="text-gray-600 mb-4">빠른 속도와 저렴한 비용의 경량화 Claude 모델입니다.</p>
+        <a href="/api-test/haiku" className="text-cyan-500 hover:text-cyan-700 font-medium">테스트 하기 →</a>
+      </div>
+    </div>
+  </div>
+);
 
 /**
  * App 컴포넌트
@@ -80,6 +127,26 @@ const App: React.FC = () => {
           
           {/* 설정 */}
           <Route path="settings/*" element={<Settings />} />
+          
+          {/* API 테스트 - 설정의 서브메뉴 */}
+          <Route path="settings/api-test">
+            <Route index element={<ApiTestDashboard />} />
+            <Route path="gpt35" element={<GPT35 />} />
+            <Route path="gpt4" element={<GPT4 />} />
+            <Route path="claude" element={<Claude />} />
+            <Route path="gemini" element={<GeminiPage />} />
+            <Route path="haiku" element={<HaikuPage />} />
+          </Route>
+          
+          {/* API 테스트 - 개발자용 직접 접근 경로 */}
+          <Route path="api-test">
+            <Route index element={<ApiTestDashboard />} />
+            <Route path="gpt35" element={<GPT35 />} />
+            <Route path="gpt4" element={<GPT4 />} />
+            <Route path="claude" element={<Claude />} />
+            <Route path="gemini" element={<GeminiPage />} />
+            <Route path="haiku" element={<HaikuPage />} />
+          </Route>
         </Route>
         
         {/* 404 리다이렉트 */}

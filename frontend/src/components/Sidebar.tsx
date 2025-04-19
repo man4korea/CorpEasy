@@ -145,7 +145,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
 
   return (
     <div 
-      className={`fixed inset-y-0 left-0 z-40 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out ${
+      className={`fixed inset-y-0 left-0 z-40 w-72 bg-white shadow-lg transform transition-transform duration-300 ease-in-out ${
         isOpen ? 'translate-x-0' : '-translate-x-full'
       }`}
     >
@@ -161,7 +161,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
       </div>
       
       {/* 로고 */}
-      <div className="p-6 mt-4">
+      <div className="py-3 px-6 mt-2">
         <Link to="/" className="text-blue-500 text-2xl font-bold" style={{ fontFamily: 'Pacifico, cursive', textShadow: '2px 2px 4px rgba(0, 0, 0, 0.1)', letterSpacing: '0.5px' }}>
           CorpEasy
         </Link>

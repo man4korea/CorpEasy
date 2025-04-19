@@ -30,7 +30,7 @@ const App: React.FC = () => {
       <Routes>
         <Route path="/" element={<Layout />}>
           {/* 대시보드 */}
-          <Route index element={<Dashboard />} />
+          <Route index element={<Navigate to="/analyze/input" replace />} />
           
           {/* AI 도구 */}
           <Route path="ai">

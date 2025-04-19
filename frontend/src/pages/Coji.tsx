@@ -1,5 +1,5 @@
 // 📁 frontend/src/pages/Coji.tsx
-// Create at 2504191300
+// Create at 2504191515
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -23,6 +23,27 @@ const floatingAnimation = {
     repeat: Infinity,
     ease: "easeInOut"
   }
+};
+
+/**
+ * HTML 태그 제거 함수
+ * @param htmlText HTML 태그가 포함된 텍스트
+ * @returns 순수 텍스트
+ */
+const stripHtmlTags = (htmlText: string): string => {
+  if (!htmlText || typeof htmlText !== 'string') return '';
+  
+  // HTML 태그 제거
+  const withoutTags = htmlText.replace(/<[^>]*>/g, '');
+  
+  // HTML 엔티티 디코딩 
+  return withoutTags
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&amp;/g, '&')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&nbsp;/g, ' ');
 };
 
 export const Coji: React.FC = () => {
@@ -75,13 +96,13 @@ export const Coji: React.FC = () => {
     if (!input.trim()) return;
 
     // 사용자 메시지 추가
-    const newUserMessage: Message = {
+    const userMessage: Message = {
       id: uuidv4(),
       text: input.trim(),
       type: 'user'
     };
 
-    setMessages(prev => [...prev, newUserMessage]);
+    setMessages(prev => [...prev, userMessage]);
     setInput('');
     setIsTyping(true);
 
@@ -89,10 +110,13 @@ export const Coji: React.FC = () => {
       // 코지 서비스로 응답 생성
       const cojiResponse = await cojiService.generateResponse(input.trim());
       
+      // HTML 태그 제거하여 순수 텍스트만 표시
+      const sanitizedText = stripHtmlTags(cojiResponse.text);
+      
       // 응답 추가
       const newCojiMessage: Message = {
         id: uuidv4(),
-        text: cojiResponse.text,
+        text: sanitizedText,
         type: 'coji',
         emotion: cojiResponse.emotion
       };
@@ -115,20 +139,6 @@ export const Coji: React.FC = () => {
     } finally {
       setIsTyping(false);
     }
-  };
-
-  // 기존 GPT API 호출 방식을 코지 서비스로 대체
-  const handleTypingEffect = (text: string, speed = 50) => {
-    let i = 0;
-    let result = '';
-    const interval = setInterval(() => {
-      if (i < text.length) {
-        result += text.charAt(i);
-        i++;
-      } else {
-        clearInterval(interval);
-      }
-    }, speed);
   };
 
   return (
@@ -210,6 +220,7 @@ export const Coji: React.FC = () => {
                         : 'bg-white shadow-md'
                     }`}
                   >
+                    {/* 텍스트 콘텐츠 안전하게 표시 */}
                     {message.text}
                     {message.type === 'coji' && message.emotion && (
                       <span className="ml-2">{message.emotion}</span>

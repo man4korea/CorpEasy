@@ -1,9 +1,30 @@
 // 📁 frontend/src/services/cojiService.ts
-// Create at 2504191250
+// Create at 2504191520
 
 import axios from 'axios';
 import { documentService } from './documentService';
 import { CojiKnowledgeBase } from '../data/cojiKnowledgeBase';
+
+/**
+ * HTML 태그와 엔티티를 제거하는 함수
+ * @param htmlText HTML이 포함된 문자열
+ * @returns 정제된 문자열
+ */
+const sanitizeHtml = (htmlText: string): string => {
+  if (!htmlText || typeof htmlText !== 'string') return '';
+  
+  // HTML 태그 제거
+  const withoutTags = htmlText.replace(/<[^>]*>/g, '');
+  
+  // HTML 엔티티 디코딩
+  return withoutTags
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&amp;/g, '&')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&nbsp;/g, ' ');
+};
 
 /**
  * 코지 서비스
@@ -30,41 +51,64 @@ class CojiService {
     emotion: '😊' | '🤔' | '😄' | '💡' | '❤️' | '⚠️' | '✨';
   }> {
     try {
-      // 1. 문서에서 관련 콘텐츠 검색
-      const docsContent = await documentService.searchRelevantContent(message);
+      // 사용자 메시지 정제 - HTML 태그 제거
+      const sanitizedMessage = sanitizeHtml(message);
       
-      // 2. Firebase 함수 호출 시도 (백업 응답으로)
-      let firebaseResponse = '';
+      // 1. 문서에서 관련 콘텐츠 검색
+      const docsContent = await documentService.searchRelevantContent(sanitizedMessage);
+      
+      // 2. API 호출 시도
+      let apiResponse = '';
       try {
-        const response = await axios.post(`${this.apiBaseUrl}/api/ask-coji`, {
-          message: message
+        const response = await axios.post(`${this.apiBaseUrl}/api/coji`, {
+          message: sanitizedMessage
+        }, {
+          headers: {
+            'Content-Type': 'application/json'
+          }
         });
         
-        if (response.data && response.data.status === 'success') {
-          firebaseResponse = response.data.reply;
+        if (response.data && response.data.message) {
+          apiResponse = response.data.message;
         }
-      } catch (error) {
-        console.warn('Firebase 함수 오류, GPT로 대체합니다:', error);
+      } catch (apiError) {
+        console.warn('코지 API 오류:', apiError);
+        
+        // 3. 백업으로 Firebase 함수 호출 시도
+        try {
+          const fbResponse = await axios.post(`${this.apiBaseUrl}/api/ask-coji`, {
+            message: sanitizedMessage
+          });
+          
+          if (fbResponse.data && fbResponse.data.status === 'success') {
+            apiResponse = fbResponse.data.reply;
+          }
+        } catch (fbError) {
+          console.warn('Firebase 함수 오류:', fbError);
+        }
       }
       
-      // 3. 각 응답 소스에 따른 처리
+      // 4. 각 응답 소스에 따른 처리
       let finalResponse = '';
       
-      // 문서 기반 응답이 있는 경우
-      if (docsContent) {
-        // 문서 콘텐츠가 있으면 GPT로 포맷팅
-        finalResponse = await this.formatResponseWithGPT(message, docsContent);
-      } 
-      // Firebase 응답이 있는 경우
-      else if (firebaseResponse) {
-        finalResponse = firebaseResponse;
+      // API 응답이 있는 경우
+      if (apiResponse) {
+        finalResponse = sanitizeHtml(apiResponse);
       }
+      // 문서 기반 응답이 있는 경우
+      else if (docsContent) {
+        // 문서 콘텐츠가 있으면 GPT로 포맷팅
+        finalResponse = await this.formatResponseWithGPT(sanitizedMessage, docsContent);
+      } 
       // 둘 다 없으면 GPT에 직접 질문
       else {
-        finalResponse = await this.askGPT(message);
+        finalResponse = await this.askGPT(sanitizedMessage);
       }
       
-      // 4. 응답 감정 분석
+      // 최종 응답에서 HTML 태그 제거 확인
+      finalResponse = sanitizeHtml(finalResponse);
+      
+      // 5. 응답 감정 분석
       const emotion = this.analyzeEmotion(finalResponse);
       
       return {
@@ -98,7 +142,10 @@ class CojiService {
             사용자의 질문에 답변할 때 다음 CorpEasy 문서의 내용을 참고하여 응답해주세요.
             문서 내용을 그대로 복사하지 말고, 사용자의 질문에 적합하게 간결하고 친절하게 정보를 제공하세요.
             문서에 없는 내용을 지어내지 마세요. 모른다면 솔직히 그렇다고 말하세요.
-            응답은 최대 4-5문장으로 간결하게 유지하세요.`
+            응답은 최대 4-5문장으로 간결하게 유지하세요.
+            
+            중요: 절대로 HTML 태그나 XML 태그를 사용하지 마세요. 순수 텍스트로만 응답하세요.
+            HTML 코드나 마크다운 형식은 사용하지 마세요. 단순한 일반 텍스트로만 답변해야 합니다.`
           },
           {
             role: 'user',
@@ -115,14 +162,15 @@ class CojiService {
       });
       
       if (response.data.choices && response.data.choices.length > 0) {
-        return response.data.choices[0].message.content;
+        // 응답에서 HTML 태그 제거
+        return sanitizeHtml(response.data.choices[0].message.content);
       } else {
         throw new Error('GPT API 응답이 유효하지 않습니다.');
       }
     } catch (error) {
       console.error('GPT 포맷팅 오류:', error);
       // 오류 발생 시 문서 내용을 기본 응답과 함께 반환
-      return `${CojiKnowledgeBase.responses.docsReference}\n\n${docsContent.substring(0, 300)}...`;
+      return sanitizeHtml(`${CojiKnowledgeBase.responses.docsReference}\n\n${docsContent.substring(0, 300)}...`);
     }
   }
   
@@ -148,6 +196,9 @@ class CojiService {
 4. 전문적인 내용도 이해하기 쉽게 설명하되, 정확성을 유지하세요.
 5. 친절하고 상냥한 톤을 유지하면서도, 과장된 표현은 피하세요.
 6. 응답은 최대 4-5문장으로 간결하게 유지하세요.
+7. HTML 태그나 XML 태그, 마크다운 형식을 절대 사용하지 마세요.
+8. <html>, <head>, <body>, <!DOCTYPE>, <div>, <span> 등의 태그를 절대 포함하지 마세요.
+9. 순수 텍스트로만 응답하세요.
 
 CorpEasy는 비즈니스용 AI 플랫폼으로, 다음과 같은 주요 기능이 있습니다:
 - 콘텐츠 상세분석기: 유튜브 영상, 웹사이트 내용 분석 및 요약
@@ -171,7 +222,8 @@ CorpEasy는 비즈니스용 AI 플랫폼으로, 다음과 같은 주요 기능�
       });
       
       if (response.data.choices && response.data.choices.length > 0) {
-        return response.data.choices[0].message.content;
+        // 응답에서 HTML 태그 제거
+        return sanitizeHtml(response.data.choices[0].message.content);
       } else {
         throw new Error('GPT API 응답이 유효하지 않습니다.');
       }

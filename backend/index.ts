@@ -1,4 +1,6 @@
 // 📁 backend/index.ts
+// Create at 2504191535
+
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
@@ -26,6 +28,7 @@ import grokRouter from './routes/grok-router';
 import youtubeRouter from './routes/youtube-router';
 import aiRouter from './routes/ai-router';
 import openaiRouter from './routes/openai-router';
+import cojiRouter from './routes/coji-router'; // 코지 라우터 추가
 
 // 환경변수 로드
 dotenv.config();
@@ -81,6 +84,7 @@ async function initializeServer() {
     app.use('/api/youtube', youtubeRouter);
     app.use('/api/ai', aiRouter);
     app.use('/api/openai', openaiRouter);
+    app.use('/api/coji', cojiRouter); // 코지 라우터 등록
     
     // 캐시 초기화 (안전하게 시도)
     try {

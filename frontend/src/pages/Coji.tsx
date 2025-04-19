@@ -1,8 +1,12 @@
-// src/pages/Coji.tsx
+// 📁 frontend/src/pages/Coji.tsx
+// Create at 2504191300
+
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { v4 as uuidv4 } from 'uuid';
 import { CojiKnowledgeBase } from '../data/cojiKnowledgeBase';
+import { cojiService } from '../services/cojiService';
+import { documentService } from '../services/documentService';
 
 interface Message {
   id: string;
@@ -33,6 +37,21 @@ export const Coji: React.FC = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
+  // 문서 서비스 초기화
+  useEffect(() => {
+    const initDocService = async () => {
+      try {
+        await documentService.initialize();
+        console.log('문서 서비스가 초기화되었습니다.');
+      } catch (error) {
+        console.error('문서 서비스 초기화 오류:', error);
+      }
+    };
+    
+    initDocService();
+  }, []);
+
+  // 코지 초기 메시지 설정
   useEffect(() => {
     if (isOpen && messages.length === 0) {
       setTimeout(() => {
@@ -46,13 +65,16 @@ export const Coji: React.FC = () => {
     }
   }, [isOpen, messages.length]);
 
+  // 메시지 변경 시 스크롤
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
 
+  // 메시지 전송 처리
   const handleSendMessage = async () => {
     if (!input.trim()) return;
 
+    // 사용자 메시지 추가
     const newUserMessage: Message = {
       id: uuidv4(),
       text: input.trim(),
@@ -64,74 +86,49 @@ export const Coji: React.FC = () => {
     setIsTyping(true);
 
     try {
-      const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
-      if (!apiKey) {
-        throw new Error('OpenAI API key is not configured');
-      }
-
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`,
-        },
-        body: JSON.stringify({
-          model: 'gpt-3.5-turbo',
-          messages: [
-            {
-              role: 'system',
-              content: "당신은 코지(Coji)입니다. 귀엽고 친근한 AI 어시스턴트로서, 이모지를 활용하여 감정을 표현하며 대화합니다. 다음 지침을 반드시 따르세요:\n\n1. 사실에 기반한 정확한 정보만 제공하세요.\n2. 확실하지 않은 내용은 추측하지 말고, '잘 모르겠어요'라고 솔직히 말하세요.\n3. 답변할 때는 신뢰할 수 있는 정보와 논리적 근거를 제시하세요.\n4. 전문적인 내용도 이해하기 쉽게 설명하되, 정확성을 유지하세요.\n5. 친절하고 상냥한 톤을 유지하면서도, 과장된 표현은 피하세요."
-            },
-            {
-              role: 'user',
-              content: input.trim()
-            }
-          ],
-        }),
-      });
-
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error?.message || 'Failed to get response');
-      }
-
-      const aiResponse = data.choices[0].message.content;
-
-      // 감정 이모지 선택 로직
-      let emotion: Message['emotion'] = '🤔';
-      if (aiResponse.includes('감사') || aiResponse.includes('좋아')) {
-        emotion = '😊';
-      } else if (aiResponse.includes('죄송') || aiResponse.includes('실패')) {
-        emotion = '⚠️';
-      } else if (aiResponse.includes('추천') || aiResponse.includes('제안')) {
-        emotion = '💡';
-      } else if (aiResponse.includes('축하') || aiResponse.includes('멋져')) {
-        emotion = '✨';
-      }
-
+      // 코지 서비스로 응답 생성
+      const cojiResponse = await cojiService.generateResponse(input.trim());
+      
+      // 응답 추가
       const newCojiMessage: Message = {
         id: uuidv4(),
-        text: aiResponse,
+        text: cojiResponse.text,
         type: 'coji',
-        emotion: emotion
+        emotion: cojiResponse.emotion
       };
+      
       setMessages(prev => [...prev, newCojiMessage]);
     } catch (error) {
-      console.error('Error details:', {
-        message: error instanceof Error ? error.message : 'Unknown error',
-        error: error
-      });
-
+      console.error('응답 처리 오류:', error);
+      
+      // 오류 메시지 추가
       const errorCojiMessage: Message = {
         id: uuidv4(),
-        text: error instanceof Error ? error.message : '응답 생성 중 오류가 발생했습니다.',
+        text: error instanceof Error 
+          ? error.message 
+          : '응답 생성 중 오류가 발생했습니다.',
         type: 'coji',
         emotion: '⚠️'
       };
+      
       setMessages(prev => [...prev, errorCojiMessage]);
     } finally {
       setIsTyping(false);
     }
+  };
+
+  // 기존 GPT API 호출 방식을 코지 서비스로 대체
+  const handleTypingEffect = (text: string, speed = 50) => {
+    let i = 0;
+    let result = '';
+    const interval = setInterval(() => {
+      if (i < text.length) {
+        result += text.charAt(i);
+        i++;
+      } else {
+        clearInterval(interval);
+      }
+    }, speed);
   };
 
   return (
@@ -261,3 +258,5 @@ export const Coji: React.FC = () => {
     </>
   );
 };
+
+export default Coji;

@@ -1,5 +1,5 @@
 // 📁 frontend/src/components/Sidebar.tsx
-// Create at 2504191805
+// Create at 2504191230
 
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
@@ -14,7 +14,10 @@ import {
   QuestionMarkCircleIcon,
   Cog6ToothIcon,
   ChevronRightIcon,
-  XMarkIcon
+  XMarkIcon,
+  CommandLineIcon,
+  BriefcaseIcon,
+  UserGroupIcon
 } from '@heroicons/react/24/outline';
 
 interface SidebarProps {
@@ -57,9 +60,23 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
       icon: <MagnifyingGlassIcon className="h-5 w-5" />,
     },
     {
-      name: '지식정보 블로그',
-      to: '/knowledge-blog',
+      name: '지식정보창고',
+      to: '/knowledge-base',
       icon: <ClipboardDocumentIcon className="h-5 w-5" />,
+      submenu: [
+        {
+          name: 'CorpEasy 블로그',
+          to: '/blog',
+        },
+        {
+          name: '유튜브 콘텐츠',
+          to: '/youtube-content',
+        },
+        {
+          name: '지식정보창고',
+          to: '/knowledge-base',
+        }
+      ]
     },
     {
       name: '업계 트렌드 알리미',
@@ -110,6 +127,22 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
       name: 'AI 비서 생성기',
       to: '/chatbot-builder',
       icon: <ChatBubbleLeftRightIcon className="h-5 w-5" />,
+    },
+    {
+      name: '프롬프트 생성기',
+      to: '/prompt-generator',
+      icon: <CommandLineIcon className="h-5 w-5" />,
+      badge: "NEW"
+    },
+    {
+      name: '경영 고민 상담소',
+      to: '/biz-counsel',
+      icon: <BriefcaseIcon className="h-5 w-5" />,
+    },
+    {
+      name: '동종업종 커뮤니티',
+      to: '/community',
+      icon: <UserGroupIcon className="h-5 w-5" />,
     },
     {
       name: 'AI 활용 도우미',
@@ -168,7 +201,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
       </div>
       
       {/* 메뉴 목록 */}
-      <nav className="mt-5 px-4">
+      <nav className="mt-5 px-4 overflow-y-auto max-h-[calc(100vh-80px)]">
         {menuItems.map((item, index) => (
           <div key={index} className="mb-2">
             {/* 메인 메뉴 항목 */}

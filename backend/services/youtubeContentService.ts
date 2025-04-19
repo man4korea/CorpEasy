@@ -1,88 +1,150 @@
 // 📁 backend/services/youtubeContentService.ts
-import { google } from 'googleapis';
-import dotenv from 'dotenv';
-dotenv.config();
+// Create at 2504191107
 
-const fetch = (...args: any[]) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
+import axios from 'axios';
+import { logger } from '../utils/logger';
 
-const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY || '';
-const youtube = google.youtube({ version: 'v3', auth: YOUTUBE_API_KEY });
+/**
+ * 유튜브 콘텐츠 서비스
+ * - 유튜브 영상 ID 추출
+ * - 유튜브 자막 추출
+ * - 유튜브 영상 정보 조회
+ */
+export class YoutubeContentService {
+  /**
+   * 유튜브 URL에서 영상 ID 추출
+   * @param url 유튜브 URL
+   * @returns 유튜브 영상 ID
+   */
+  static extractVideoId(url: string): string | null {
+    try {
+      const urlObj = new URL(url);
 
-export function extractVideoId(url: string): string | null {
-  const regExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/;
-  const match = url.match(regExp);
-  return (match && match[7]?.length === 11) ? match[7] : null;
-}
+      if (urlObj.hostname === 'youtu.be') {
+        return urlObj.pathname.substring(1);
+      }
 
-export async function getVideoInfo(videoId: string) {
-  const response = await youtube.videos.list({
-    part: 'snippet,contentDetails,statistics',
-    id: videoId,
-  });
-  const video = response.data.items?.[0];
-  if (!video) throw new Error('영상을 찾을 수 없습니다.');
+      if (urlObj.hostname.includes('youtube.com')) {
+        const searchParams = new URLSearchParams(urlObj.search);
+        return searchParams.get('v');
+      }
 
-  return {
-    title: video.snippet?.title,
-    description: video.snippet?.description,
-    publishedAt: video.snippet?.publishedAt,
-    channel: video.snippet?.channelTitle,
-    thumbnail: video.snippet?.thumbnails?.high?.url,
-    duration: video.contentDetails?.duration,
-    viewCount: video.statistics?.viewCount,
-  };
-}
+      return null;
+    } catch (error) {
+      logger.error('유튜브 URL 파싱 오류:', error);
+      return null;
+    }
+  }
 
-export async function getTranscriptFallback(videoId: string) {
-  try {
-    const response = await fetch(`https://www.youtube.com/watch?v=${videoId}`);
-    const html = await response.text();
-    const captionTrackMatch = html.match(/"captionTracks":\[(.*?)\]/);
-    if (!captionTrackMatch) return null;
+  /**
+   * 유튜브 자막 추출
+   * @param videoId 유튜브 영상 ID
+   * @returns 자막 텍스트
+   */
+  static async fetchTranscript(videoId: string): Promise<string> {
+    try {
+      const response = await axios.get(`${process.env.API_BASE_URL}/api/youtube-transcript?videoId=${videoId}`);
 
-    const captionTracks = JSON.parse(`[${captionTrackMatch[1]}]`);
-    const track = captionTracks.find((t: any) =>
-      t.languageCode === 'ko' || t.languageCode === 'en') || captionTracks[0];
+      if (response.status !== 200 || !response.data) {
+        throw new Error(`자막 추출 실패: ${response.status}`);
+      }
 
-    if (!track?.baseUrl) return null;
+      if (Array.isArray(response.data)) {
+        return response.data
+          .map((item: { text: string }) => item.text)
+          .join(' ')
+          .replace(/\s+/g, ' ');
+      }
 
-    const captionRes = await fetch(track.baseUrl);
-    const captionXml = await captionRes.text();
-    const textSegments = captionXml.match(/<text.*?>(.*?)<\/text>/g) || [];
+      if (typeof response.data === 'string') {
+        return response.data;
+      }
 
-    const script = textSegments.map(segment => {
-      const match = segment.match(/<text.*?>(.*?)<\/text>/);
-      return match ? match[1].replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>') : '';
-    }).join(' ');
+      if (response.data.transcript) {
+        return response.data.transcript;
+      }
+
+      throw new Error('자막 데이터 형식이 예상과 다릅니다.');
+    } catch (error) {
+      logger.error(`유튜브 자막 추출 오류 (videoId: ${videoId}):`, error);
+      throw new Error(`유튜브 자막을 추출할 수 없습니다: ${(error as Error).message}`);
+    }
+  }
+
+  /**
+   * 유튜브 영상 정보 조회
+   * @param videoId 유튜브 영상 ID
+   * @returns 영상 정보 (제목, 설명, 썸네일 등)
+   */
+  static async fetchVideoInfo(videoId: string): Promise<any> {
+    try {
+      if (!process.env.YOUTUBE_API_KEY) {
+        throw new Error('YouTube API 키가 설정되어 있지 않습니다.');
+      }
+
+      const response = await axios.get(`https://www.googleapis.com/youtube/v3/videos`, {
+        params: {
+          part: 'snippet,contentDetails,statistics',
+          id: videoId,
+          key: process.env.YOUTUBE_API_KEY
+        }
+      });
+
+      if (response.status !== 200 || !response.data || !response.data.items || response.data.items.length === 0) {
+        throw new Error(`영상 정보 조회 실패: ${response.status}`);
+      }
+
+      return response.data.items[0];
+    } catch (error) {
+      logger.error(`유튜브 영상 정보 조회 오류 (videoId: ${videoId}):`, error);
+      throw new Error(`유튜브 영상 정보를 조회할 수 없습니다: ${(error as Error).message}`);
+    }
+  }
+
+  /**
+   * 유튜브 콘텐츠 분석에 필요한 모든 정보 조회
+   * @param url 유튜브 URL
+   * @returns 영상 정보와 자막
+   */
+  static async getYoutubeContentData(url: string): Promise<{
+    videoId: string;
+    videoInfo: any;
+    transcript: string;
+  }> {
+    const videoId = this.extractVideoId(url);
+
+    if (!videoId) {
+      throw new Error('유효한 유튜브 URL이 아닙니다.');
+    }
+
+    const [videoInfo, transcript] = await Promise.all([
+      this.fetchVideoInfo(videoId),
+      this.fetchTranscript(videoId)
+    ]);
 
     return {
-      script,
-      source: 'transcript'
+      videoId,
+      videoInfo,
+      transcript
     };
-  } catch (err: any) {
-    console.warn('자막 추출 실패:', err.message);
-    return null;
+  }
+
+  /**
+   * 유튜브 URL 유효성 검사
+   * @param url 유튜브 URL
+   * @returns 유효성 여부
+   */
+  static isValidYoutubeUrl(url: string): boolean {
+    try {
+      const videoId = this.extractVideoId(url);
+      return videoId !== null;
+    } catch (error) {
+      return false;
+    }
   }
 }
 
-export async function getYoutubeContent(url: string) {
-  const videoId = extractVideoId(url);
-  if (!videoId) throw new Error('유효한 YouTube URL이 아닙니다.');
+// ✅ 이 부분이 새로 추가됨!
+export const getYoutubeContent = YoutubeContentService.getYoutubeContentData;
 
-  const video = await getVideoInfo(videoId);
-  const transcriptResult = await getTranscriptFallback(videoId);
-
-  return {
-    success: true,
-    title: video.title,
-    channel: video.channel,
-    script: transcriptResult?.script || video.description,
-    description: video.description,
-    thumbnailUrl: video.thumbnail,
-    duration: video.duration,
-    viewCount: video.viewCount,
-    captionLanguage: transcriptResult ? transcriptResult.source : 'description',
-    publishDate: video.publishedAt,
-    source: transcriptResult ? 'transcript' : 'description'
-  };
-}
+export default YoutubeContentService;

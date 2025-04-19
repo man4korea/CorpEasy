@@ -1,5 +1,5 @@
 // 📁 frontend/src/components/Topbar.tsx
-// Create at 2304191825
+// Create at 2504191235
 
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
@@ -68,6 +68,18 @@ const Topbar: React.FC<TopbarProps> = ({
             >
               CorpEasy
             </Link>
+          </div>
+          
+          {/* 중앙 영역: 블로그 메뉴 */}
+          <div className="flex items-center justify-center flex-1">
+            <nav className="hidden md:flex space-x-8">
+              <Link 
+                to="/blog"
+                className="text-gray-700 hover:text-blue-500 px-3 py-2 text-sm font-medium transition-colors duration-200"
+              >
+                블로그
+              </Link>
+            </nav>
           </div>
           
           {/* 오른쪽 영역: 알림 및 사용자 메뉴 */}

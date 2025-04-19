@@ -4,12 +4,21 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
-import ContentAnalyzerPage from './pages/ContentAnalyzerPage';
+import AnalyzeInputPage from './pages/AnalyzeInputPage';
+import KnowledgeBasePage from './pages/KnowledgeBasePage';
+import CorpEasyBlogPage from './pages/CorpEasyBlogPage';
+import ContentAnalysisPage from './pages/ContentAnalysisPage';
+import BlogDetailPage from './pages/BlogDetailPage';
 import Dashboard from './pages/Dashboard';
 import { Coji } from './pages/Coji';
 
+// 신규 추가된 페이지 
+const PromptGenerator = () => <div className="container mx-auto p-6"><h1 className="text-2xl font-bold mb-4">프롬프트 생성기</h1><p>효과적인 AI 프롬프트를 자동으로 생성하는 도구입니다.</p></div>;
+const BizCounsel = () => <div className="container mx-auto p-6"><h1 className="text-2xl font-bold mb-4">경영 고민 상담소</h1><p>비즈니스 문제에 대한 AI 기반 전문 상담 서비스입니다.</p></div>;
+const Community = () => <div className="container mx-auto p-6"><h1 className="text-2xl font-bold mb-4">동종업종 커뮤니티</h1><p>업종별 네트워킹 및 정보 공유 플랫폼입니다.</p></div>;
+const YoutubeContent = () => <div className="container mx-auto p-6"><h1 className="text-2xl font-bold mb-4">유튜브 콘텐츠</h1><p>카테고리별 분석된 유튜브 콘텐츠 모음입니다.</p></div>;
+
 // 아직 구현되지 않은 페이지를 위한 임시 컴포넌트
-const KnowledgeBlog = () => <div className="container mx-auto p-6"><h1 className="text-2xl font-bold mb-4">지식정보 블로그</h1><p>분석된 콘텐츠 기반 자동 생성 블로그입니다.</p></div>;
 const TrendAlerts = () => <div className="container mx-auto p-6"><h1 className="text-2xl font-bold mb-4">업계 트렌드 알리미</h1><p>맞춤형 트렌드 모니터링 및 알림 서비스입니다.</p></div>;
 const CreativeStudio = () => <div className="container mx-auto p-6"><h1 className="text-2xl font-bold mb-4">크리에이티브 스튜디오</h1><p>콘텐츠 제작 도구 모음입니다.</p></div>;
 const DataAnalyzer = () => <div className="container mx-auto p-6"><h1 className="text-2xl font-bold mb-4">데이터 분석기</h1><p>업로드된 데이터 자동 분석 도구입니다.</p></div>;
@@ -33,11 +42,16 @@ const App: React.FC = () => {
           {/* 대시보드 */}
           <Route index element={<Dashboard />} />
           
-          {/* 콘텐츠 심층분석기 */}
-          <Route path="content-analyzer" element={<ContentAnalyzerPage />} />
+          {/* 콘텐츠 상세분석기 */}
+          <Route path="analyze" element={<AnalyzeInputPage />} />
+          <Route path="content-analyzer" element={<AnalyzeInputPage />} />
+          <Route path="content-analysis/:id" element={<ContentAnalysisPage />} />
           
-          {/* 지식정보 블로그 */}
-          <Route path="knowledge-blog" element={<KnowledgeBlog />} />
+          {/* 지식정보창고 */}
+          <Route path="knowledge-base" element={<KnowledgeBasePage />} />
+          <Route path="blog" element={<CorpEasyBlogPage />} />
+          <Route path="blog/:id" element={<BlogDetailPage />} />
+          <Route path="youtube-content" element={<YoutubeContent />} />
           
           {/* 업계 트렌드 알리미 */}
           <Route path="trend-alerts" element={<TrendAlerts />} />
@@ -55,6 +69,11 @@ const App: React.FC = () => {
           
           {/* AI 비서 생성기 */}
           <Route path="chatbot-builder" element={<ChatbotBuilder />} />
+          
+          {/* 신규 추가된 메뉴 */}
+          <Route path="prompt-generator" element={<PromptGenerator />} />
+          <Route path="biz-counsel" element={<BizCounsel />} />
+          <Route path="community" element={<Community />} />
           
           {/* AI 활용 도우미 */}
           <Route path="ai-helper/*" element={<AiHelper />} />

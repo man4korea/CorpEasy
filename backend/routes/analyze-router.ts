@@ -1,53 +1,327 @@
 // 📁 backend/routes/analyze-router.ts
-// 콘텐츠 분석 API 라우터
+// Create at 2504191120
 
 import express from 'express';
-import { cacheFactory } from '../utils/cache-factory';
-import { measureResponseTime } from '../middlewares/response-time';
-import { ApiError } from '../middlewares/error-handler';
+import { ContentAnalysisService } from '../services/contentAnalysisService';
+import { BlogGenerationService } from '../services/blogGenerationService';
+import { logger } from '../utils/logger';
+import multer from 'multer';
+import { createReadStream } from 'fs';
+import { promisify } from 'util';
+import * as fs from 'fs';
 
+const readFileAsync = promisify(fs.readFile);
 const router = express.Router();
-const cache = cacheFactory.getCache();
 
-// Generate cache key from content, limiting length to avoid huge keys
-const generateCacheKey = (content: string): string => {
-  const truncated = content.slice(0, 50);
-  return `analyze:${truncated}`;
-};
-
-router.use(measureResponseTime);
-
-// 콘텐츠 분석 엔드포인트
-router.post('/', async (req, res, next) => {
-  try {
-    const { content } = req.body;
-    
-    if (!content || typeof content !== 'string') {
-      return res.status(400).json({ error: 'Content is required and must be a string' });
+// 파일 업로드를 위한 multer 설정
+const upload = multer({
+  storage: multer.diskStorage({
+    destination: function (req, file, cb) {
+      cb(null, './uploads/');
+    },
+    filename: function (req, file, cb) {
+      cb(null, `${Date.now()}-${file.originalname}`);
     }
-
-    const cacheKey = generateCacheKey(content);
-    const cachedResult = await cache.get(cacheKey);
-    
-    if (cachedResult && typeof cachedResult === 'string') {
-      return res.json(JSON.parse(cachedResult));
-    }
-
-    // TODO: Implement actual analysis logic here
-    const analysis = {
-      summary: "Sample summary of the content",
-      keywords: ["sample", "keywords"],
-      sentiment: "neutral",
-      topics: ["topic1", "topic2"],
-      suggestions: ["suggestion1", "suggestion2"]
-    };
-
-    await cache.set(cacheKey, JSON.stringify(analysis), 3600); // Cache for 1 hour
-    res.json(analysis);
-    
-  } catch (error) {
-    next(error);
+  }),
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB 제한
   }
 });
 
-export default router; 
+// Services 초기화
+const contentAnalysisService = new ContentAnalysisService();
+const blogGenerationService = new BlogGenerationService();
+
+// 응답 시간 로깅 미들웨어
+router.use((req, res, next) => {
+  const start = Date.now();
+  
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    logger.info(`${req.method} ${req.originalUrl} ${res.statusCode} ${duration}ms`);
+  });
+  
+  next();
+});
+
+/**
+ * 콘텐츠 분석 엔드포인트
+ * URL, 키워드, 텍스트 등을 분석하여 결과 반환
+ */
+router.post('/content', async (req, res) => {
+  try {
+    const { input } = req.body;
+    
+    if (!input) {
+      return res.status(400).json({
+        success: false,
+        message: '분석할 콘텐츠가 없습니다.',
+      });
+    }
+    
+    // 콘텐츠 분석 수행
+    const analysisId = await contentAnalysisService.analyzeContent(input);
+    
+    // 분석 결과 조회
+    const analysis = await firestoreModel.getContentAnalysisById(analysisId);
+    
+    return res.status(200).json({
+      success: true,
+      analysisId,
+      analysis,
+    });
+  } catch (error) {
+    logger.error('콘텐츠 분석 오류:', error);
+    
+    return res.status(500).json({
+      success: false,
+      message: `콘텐츠 분석 중 오류가 발생했습니다: ${(error as Error).message}`,
+    });
+  }
+});
+
+/**
+ * 파일 업로드 분석 엔드포인트
+ * 업로드된 파일을 분석하여 결과 반환
+ */
+router.post('/file', upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: '파일이 업로드되지 않았습니다.',
+      });
+    }
+    
+    // 파일 읽기
+    const fileContent = await readFileAsync(req.file.path, 'utf8');
+    
+    // 콘텐츠 분석 수행
+    const analysisId = await contentAnalysisService.analyzeContent(
+      fileContent,
+      req.file.originalname
+    );
+    
+    // 분석 결과 조회
+    const analysis = await firestoreModel.getContentAnalysisById(analysisId);
+    
+    // 임시 파일 삭제
+    fs.unlink(req.file.path, (err) => {
+      if (err) {
+        logger.error(`임시 파일 삭제 오류: ${req.file?.path}`, err);
+      }
+    });
+    
+    return res.status(200).json({
+      success: true,
+      analysisId,
+      analysis,
+    });
+  } catch (error) {
+    logger.error('파일 분석 오류:', error);
+    
+    // 임시 파일 삭제 시도
+    if (req.file?.path) {
+      fs.unlink(req.file.path, () => {});
+    }
+    
+    return res.status(500).json({
+      success: false,
+      message: `파일 분석 중 오류가 발생했습니다: ${(error as Error).message}`,
+    });
+  }
+});
+
+/**
+ * 상세 분석 엔드포인트
+ * 기본 분석 결과를 기반으로 상세 분석 수행
+ */
+router.get('/detail/:analysisId', async (req, res) => {
+  try {
+    const { analysisId } = req.params;
+    
+    if (!analysisId) {
+      return res.status(400).json({
+        success: false,
+        message: '분석 ID가 필요합니다.',
+      });
+    }
+    
+    // 상세 분석 수행
+    const detailedAnalysis = await contentAnalysisService.performDetailedAnalysis(analysisId);
+    
+    return res.status(200).json({
+      success: true,
+      detailedAnalysis,
+    });
+  } catch (error) {
+    logger.error(`상세 분석 오류 (analysisId: ${req.params.analysisId}):`, error);
+    
+    return res.status(500).json({
+      success: false,
+      message: `상세 분석 중 오류가 발생했습니다: ${(error as Error).message}`,
+    });
+  }
+});
+
+/**
+ * 블로그 생성 엔드포인트
+ * 분석 결과와 SEO 제목을 기반으로 블로그 콘텐츠 생성
+ */
+router.post('/blog', async (req, res) => {
+  try {
+    const { analysisId, title } = req.body;
+    
+    if (!analysisId || !title) {
+      return res.status(400).json({
+        success: false,
+        message: '분석 ID와 제목이 필요합니다.',
+      });
+    }
+    
+    // 블로그 콘텐츠 생성
+    const blogId = await blogGenerationService.generateBlogContent(analysisId, title);
+    
+    // 블로그 아티클 상세 조회
+    const blogDetail = await blogGenerationService.getBlogArticleDetail(blogId);
+    
+    return res.status(200).json({
+      success: true,
+      blogId,
+      blog: blogDetail?.blog,
+    });
+  } catch (error) {
+    logger.error(`블로그 생성 오류 (analysisId: ${req.body.analysisId}, title: ${req.body.title}):`, error);
+    
+    return res.status(500).json({
+      success: false,
+      message: `블로그 생성 중 오류가 발생했습니다: ${(error as Error).message}`,
+    });
+  }
+});
+
+/**
+ * 모든 콘텐츠 분석 결과 조회 엔드포인트
+ */
+router.get('/content-analyses', async (req, res) => {
+  try {
+    const limit = req.query.limit ? parseInt(req.query.limit as string) : 10;
+    
+    // 모든 콘텐츠 분석 결과 조회
+    const analyses = await firestoreModel.getAllContentAnalysis(limit);
+    
+    return res.status(200).json({
+      success: true,
+      analyses: analyses.items,
+      lastVisible: analyses.lastVisible ? analyses.lastVisible.id : null,
+    });
+  } catch (error) {
+    logger.error('콘텐츠 분석 결과 조회 오류:', error);
+    
+    return res.status(500).json({
+      success: false,
+      message: `콘텐츠 분석 결과 조회 중 오류가 발생했습니다: ${(error as Error).message}`,
+    });
+  }
+});
+
+/**
+ * 카테고리별 콘텐츠 분석 결과 조회 엔드포인트
+ */
+router.get('/content-analyses/category/:category', async (req, res) => {
+  try {
+    const { category } = req.params;
+    const limit = req.query.limit ? parseInt(req.query.limit as string) : 10;
+    
+    if (!category) {
+      return res.status(400).json({
+        success: false,
+        message: '카테고리가 필요합니다.',
+      });
+    }
+    
+    // 카테고리별 콘텐츠 분석 결과 조회
+    const analyses = await firestoreModel.getContentAnalysisByCategory(category, limit);
+    
+    return res.status(200).json({
+      success: true,
+      analyses: analyses.items,
+      lastVisible: analyses.lastVisible ? analyses.lastVisible.id : null,
+    });
+  } catch (error) {
+    logger.error(`카테고리별 콘텐츠 분석 결과 조회 오류 (category: ${req.params.category}):`, error);
+    
+    return res.status(500).json({
+      success: false,
+      message: `카테고리별 콘텐츠 분석 결과 조회 중 오류가 발생했습니다: ${(error as Error).message}`,
+    });
+  }
+});
+
+/**
+ * 게시된 블로그 아티클 조회 엔드포인트
+ */
+router.get('/blogs', async (req, res) => {
+  try {
+    const limit = req.query.limit ? parseInt(req.query.limit as string) : 10;
+    
+    // 게시된 블로그 아티클 조회
+    const blogs = await firestoreModel.getPublishedBlogArticles(limit);
+    
+    return res.status(200).json({
+      success: true,
+      blogs: blogs.items,
+      lastVisible: blogs.lastVisible ? blogs.lastVisible.id : null,
+    });
+  } catch (error) {
+    logger.error('게시된 블로그 아티클 조회 오류:', error);
+    
+    return res.status(500).json({
+      success: false,
+      message: `게시된 블로그 아티클 조회 중 오류가 발생했습니다: ${(error as Error).message}`,
+    });
+  }
+});
+
+/**
+ * 블로그 아티클 상세 조회 엔드포인트
+ */
+router.get('/blog/:blogId', async (req, res) => {
+  try {
+    const { blogId } = req.params;
+    
+    if (!blogId) {
+      return res.status(400).json({
+        success: false,
+        message: '블로그 ID가 필요합니다.',
+      });
+    }
+    
+    // 블로그 아티클 상세 조회
+    const blogDetail = await blogGenerationService.getBlogArticleDetail(blogId);
+    
+    if (!blogDetail) {
+      return res.status(404).json({
+        success: false,
+        message: '블로그 아티클을 찾을 수 없습니다.',
+      });
+    }
+    
+    return res.status(200).json({
+      success: true,
+      blog: blogDetail.blog,
+      analysis: blogDetail.analysis,
+    });
+  } catch (error) {
+    logger.error(`블로그 아티클 상세 조회 오류 (blogId: ${req.params.blogId}):`, error);
+    
+    return res.status(500).json({
+      success: false,
+      message: `블로그 아티클 상세 조회 중 오류가 발생했습니다: ${(error as Error).message}`,
+    });
+  }
+});
+
+import firestoreModel from '../models/firestoreModel';
+
+export default router;

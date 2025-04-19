@@ -1,0 +1,286 @@
+<!-- 블로그 포스트 메인 제목 (h1) -->
+<!-- 제목을 심플하게 작성하여 제목란에 쉽게 복사할 수 있도록 합니다 -->
+블로그 메인 제목
+
+<!-- 주요 섹션 제목 (h2) -->
+<h2 style="font-size: 1.8rem; font-weight: 700; color: #0d47a1; margin-top: 1.5em; margin-bottom: 0.8em; line-height: 1.2; border-left: 5px solid #1976d2; padding-left: 0.8em; font-family: 'Noto Sans KR', sans-serif;">주요 섹션 제목</h2>
+
+<!-- 섹션 내 하위 주제 (h3) -->
+<h3 style="font-size: 1.5rem; font-weight: 700; color: #ffffff; background-color: #1565c0; padding: 0.5em 1em; border-radius: 4px; width: 100%; box-sizing: border-box; margin-top: 1.5em; margin-bottom: 0.8em; line-height: 1.2; font-family: 'Noto Sans KR', sans-serif;">섹션 내 하위 주제</h3>
+
+<!-- 일반 소제목 (h4) -->
+<h4 style="font-size: 1.2rem; font-weight: 700; color: #1e88e5; margin-top: 1.5em; margin-bottom: 0.8em; line-height: 1.2; font-style: italic; font-family: 'Noto Sans KR', sans-serif;">일반 소제목</h4>
+
+<!-- 일반 본문 텍스트 -->
+<p style="font-size: 1rem; line-height: 1.8; margin-bottom: 1.2em; color: #333; font-family: 'Noto Sans KR', sans-serif;">일반 본문 텍스트입니다. 블로그의 주요 내용을 설명하는 텍스트로 사용됩니다. 글의
+대부분을 차지하는 부분으로 가독성이 좋아야 합니다.</p>
+
+<!-- 강조가 필요한 본문 -->
+<p style="font-size: 1rem; line-height: 1.8; margin-bottom: 1.2em; color: #1565c0; font-weight: 500; font-family: 'Noto Sans KR', sans-serif;">강조가 필요한 본문 텍스트입니다. 일반 텍스트보다 약간 더 강조해서 보여줄 필요가 있는 내용에 사용합니다.</p>
+
+<!-- 강조가 필요한 부분 -->
+이 문장에서 <strong style="font-weight: 700; color: #1565c0; font-family: 'Noto Sans KR', sans-serif;">특별히 강조하고 싶은 부분</strong>은 strong 태그로 표시합니다.
+
+<!-- 굵은 폰트 처리해야 부분 -->
+이 문장에서 <b style="font-weight: 700; color: #1e88e5; font-family: 'Noto Sans KR', sans-serif;">굵게 처리할 부분</b>은 b 태그로 표시합니다.
+
+<!-- 체크리스트 형식의 강조 본문 -->
+<ul style="margin-bottom: 1.2em; padding-left: 0.5em; list-style-type: none; color: #333; font-family: 'Noto Sans KR', sans-serif;">
+  <li style="margin-bottom: 0.5em; position: relative; padding-left: 2em; font-size: 1rem;">
+    <input type="checkbox" id="check1" checked style="position: absolute; left: 0; top: 0.3em; accent-color: #1976d2;">
+    <label for="check1" style="cursor: pointer;">완료된 체크리스트 항목</label>
+  </li>
+  <li style="margin-bottom: 0.5em; position: relative; padding-left: 2em; font-size: 1rem;">
+    <input type="checkbox" id="check2" style="position: absolute; left: 0; top: 0.3em; accent-color: #1976d2;">
+    <label for="check2" style="cursor: pointer;">완료되지 않은 체크리스트 항목</label>
+  </li>
+  <li style="margin-bottom: 0.5em; position: relative; padding-left: 2em; font-size: 1rem;">
+    <input type="checkbox" id="check3" style="position: absolute; left: 0; top: 0.3em; accent-color: #1976d2;">
+    <label for="check3" style="cursor: pointer;">체크리스트 항목 3</label>
+  </li>
+</ul>
+
+<!-- 인용구 스타일 -->
+<blockquote style="border-left: 4px solid #1976d2; padding: 0.5em 1em; margin: 1.5em 0; font-style: italic; color: #1565c0; background-color: #e3f2fd; font-family: 'Noto Sans KR', sans-serif; font-size: 1rem;">
+  다른 출처에서 인용한 내용이나 특별히 강조하고 싶은 구절을 blockquote 태그로 표시합니다. 파란색 세로선과 연한 배경으로 일반 텍스트와 구분됩니다.
+</blockquote>
+
+<!-- 코드 블록 -->
+<pre style="background-color: #f5f5f5; border-radius: 4px; padding: 1em; overflow: auto; margin: 1.5em 0; border-left: 4px solid #1976d2; font-family: 'Consolas', 'Monaco', monospace; font-size: 1rem; color: #333;"><code style="font-family: 'Consolas', 'Monaco', monospace; color: #1565c0;">// 코드 블록 예시
+function helloWorld() {
+  console.log("안녕하세요, 세계!");
+}
+helloWorld();</code></pre>
+
+<!-- 인라인 코드 -->
+본문 중간에 <code style="background-color: #f5f5f5; padding: 0.2em 0.4em; border-radius: 3px; font-family: 'Consolas', 'Monaco', monospace; font-size: 1rem; color: #1565c0;">인라인 코드</code>를 삽입할 때 사용합니다.
+
+<!-- 구분선 -->
+<hr style="border: 0; height: 1px; background-image: linear-gradient(to right, rgba(25, 118, 210, 0), rgba(25, 118, 210, 0.75), rgba(25, 118, 210, 0)); margin: 2em 0;">
+
+<!-- 숫자 리스트 -->
+<ol style="margin-bottom: 1.2em; padding-left: 2em; color: #333; font-family: 'Noto Sans KR', sans-serif;">
+  <li style="margin-bottom: 0.5em; position: relative; font-size: 1rem;">순서가 있는 리스트 항목 1</li>
+  <li style="margin-bottom: 0.5em; position: relative; font-size: 1rem;">순서가 있는 리스트 항목 2</li>
+  <li style="margin-bottom: 0.5em; position: relative; font-size: 1rem;">순서가 있는 리스트 항목 3</li>
+</ol>
+
+<!-- 불릿 리스트 -->
+<ul style="margin-bottom: 1.2em; padding-left: 2em; list-style-type: none; color: #333; font-family: 'Noto Sans KR', sans-serif;">
+  <li style="margin-bottom: 0.5em; position: relative; font-size: 1rem;">
+    <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background-color: #1976d2; margin-right: 10px; position: absolute; left: -20px; top: 8px;"></span>
+    순서가 없는 리스트 항목 1
+  </li>
+  <li style="margin-bottom: 0.5em; position: relative; font-size: 1rem;">
+    <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background-color: #1976d2; margin-right: 10px; position: absolute; left: -20px; top: 8px;"></span>
+    순서가 없는 리스트 항목 2
+  </li>
+</ul>
+
+<!-- 글상자 -->
+<div style="border: 1px solid #bbdefb; padding: 1em; border-radius: 4px; margin: 1.5em 0; background-color: #e3f2fd; font-family: 'Noto Sans KR', sans-serif;">
+  <p style="margin: 0; line-height: 1.6; font-size: 1rem;">글상자는 특정 내용을 시각적으로 구분하여 표시할 때 사용합니다. 연한 파란색 배경과 파란색 테두리로 일반 텍스트와 구분됩니다.</p>
+</div>
+
+<!-- 경고/주의 상자 -->
+<div style="border-left: 4px solid #ff5722; padding: 1em; border-radius: 4px; margin: 1.5em 0; background-color: #fff3e0; color: #e64a19; font-family: 'Noto Sans KR', sans-serif;">
+  <div style="font-weight: 700; margin-bottom: 0.5em; font-size: 1.1rem;">⚠️ 주의</div>
+  <p style="margin: 0; line-height: 1.6; font-size: 1rem;">주의가 필요한 내용을 표시할 때 사용합니다. 경고나 주의사항 등을 강조하고 싶을 때 유용합니다.</p>
+</div>
+
+<!-- 메모/노트 박스 -->
+<div style="border-left: 4px solid #2196f3; padding: 1em; border-radius: 4px; margin: 1.5em 0; background-color: #e3f2fd; color: #0d47a1; font-family: 'Noto Sans KR', sans-serif;">
+  <div style="font-weight: 700; margin-bottom: 0.5em; font-size: 1.1rem;">📝 메모</div>
+  <p style="margin: 0; line-height: 1.6; font-size: 1rem;">팁이나 부가적인 정보를 제공할 때 사용하는 메모 박스입니다.</p>
+</div>
+
+<!-- 링크 스타일 -->
+<a href="#" style="color: #1e88e5; text-decoration: none; font-weight: 700; font-family: 'Noto Sans KR', sans-serif; position: relative; display: inline-block; overflow: hidden; padding-bottom: 2px; background: linear-gradient(to right, #1976d2, #1e88e5); background-size: 100% 2px; background-position: 0 100%; background-repeat: no-repeat; text-shadow: 0px 0px 1px rgba(25, 118, 210, 0.1); font-size: 1rem;">일반 링크 스타일</a>
+
+<!-- 다운로드 링크 -->
+<a href="#" style="display: inline-block; padding: 0.5em 1em; background-color: #1976d2; color: white; text-decoration: none; border-radius: 4px; font-weight: 600; margin: 1em 0; font-family: 'Noto Sans KR', sans-serif; font-size: 1rem;">📥 다운로드 링크</a>
+
+<!-- 표 스타일 -->
+<table style="width: 100%; border-collapse: collapse; margin: 1.5em 0; font-family: 'Noto Sans KR', sans-serif;">
+  <thead>
+    <tr>
+      <th style="border: 1px solid #bbdefb; padding: 0.5em; text-align: left; background-color: #1976d2; color: white; font-weight: 700; font-size: 1rem;">헤더 1</th>
+      <th style="border: 1px solid #bbdefb; padding: 0.5em; text-align: left; background-color: #1976d2; color: white; font-weight: 700; font-size: 1rem;">헤더 2</th>
+      <th style="border: 1px solid #bbdefb; padding: 0.5em; text-align: left; background-color: #1976d2; color: white; font-weight: 700; font-size: 1rem;">헤더 3</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="border: 1px solid #bbdefb; padding: 0.5em; text-align: left; font-size: 1rem;">데이터 1</td>
+      <td style="border: 1px solid #bbdefb; padding: 0.5em; text-align: left; font-size: 1rem;">데이터 2</td>
+      <td style="border: 1px solid #bbdefb; padding: 0.5em; text-align: left; font-size: 1rem;">데이터 3</td>
+    </tr>
+    <tr style="background-color: #e3f2fd;">
+      <td style="border: 1px solid #bbdefb; padding: 0.5em; text-align: left; font-size: 1rem;">데이터 4</td>
+      <td style="border: 1px solid #bbdefb; padding: 0.5em; text-align: left; font-size: 1rem;">데이터 5</td>
+      <td style="border: 1px solid #bbdefb; padding: 0.5em; text-align: left; font-size: 1rem;">데이터 6</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- 강조 박스 (기존 p 태그 강조와 다른 형태) -->
+<div style="background-color: #1976d2; color: white; padding: 1em; border-radius: 4px; margin: 1.5em 0; font-family: 'Noto Sans KR', sans-serif;">
+  <p style="margin: 0; line-height: 1.6; font-weight: 600; font-size: 1rem;">매우 중요한 내용을 강조하기 위한 박스입니다. 파란색 배경에 흰색 글자로 눈에 잘 띄도록 디자인되었습니다.</p>
+</div>
+
+<!-- 블로그 포스트 메인 제목 (h1) -->
+<!-- 제목을 심플하게 작성하여 제목란에 쉽게 복사할 수 있도록 합니다 -->
+블로그 메인 제목
+<!-- 주요 섹션 제목 (h2) -->
+<h2 style="font-size: 1.8rem; font-weight: 700; color: #0d47a1; margin-top: 1.5em; margin-bottom: 0.8em; line-height: 1.2; border-left: 5px solid #1976d2; padding-left: 0.8em; font-family: 'Noto Sans KR', sans-serif;">주요 섹션 제목</h2>
+<!-- 섹션 내 하위 주제 (h3) -->
+<h3 style="font-size: 1.5rem; font-weight: 700; color: #ffffff; background-color: #1565c0; padding: 0.5em 1em; border-radius: 4px; width: 100%; box-sizing: border-box; margin-top: 1.5em; margin-bottom: 0.8em; line-height: 1.2; font-family: 'Noto Sans KR', sans-serif;">섹션 내 하위 주제</h3>
+<!-- 일반 소제목 (h4) -->
+<h4 style="font-size: 1.2rem; font-weight: 700; color: #1e88e5; margin-top: 1.5em; margin-bottom: 0.8em; line-height: 1.2; font-style: italic; font-family: 'Noto Sans KR', sans-serif;">일반 소제목</h4>
+<!-- 일반 본문 텍스트 -->
+<p style="font-size: 1rem; line-height: 1.8; margin-bottom: 1.2em; color: #333; font-family: 'Noto Sans KR', sans-serif;">일반 본문 텍스트입니다. 블로그의 주요 내용을 설명하는 텍스트로 사용됩니다. 글의
+대부분을 차지하는 부분으로 가독성이 좋아야 합니다.</p>
+<!-- 강조가 필요한 본문 -->
+<p style="font-size: 1rem; line-height: 1.8; margin-bottom: 1.2em; color: #1565c0; font-weight: 500; font-family: 'Noto Sans KR', sans-serif;">강조가 필요한 본문 텍스트입니다. 일반 텍스트보다 약간 더 강조해서 보여줄 필요가 있는 내용에 사용합니다.</p>
+<!-- 강조가 필요한 부분 -->
+이 문장에서 <strong style="font-weight: 700; color: #1565c0; font-family: 'Noto Sans KR', sans-serif;">특별히 강조하고 싶은 부분</strong>은 strong 태그로 표시합니다.
+<!-- 굵은 폰트 처리해야 부분 -->
+이 문장에서 <b style="font-weight: 700; color: #1e88e5; font-family: 'Noto Sans KR', sans-serif;">굵게 처리할 부분</b>은 b 태그로 표시합니다.
+<!-- 체크리스트 형식의 강조 본문 -->
+<ul style="margin-bottom: 1.2em; padding-left: 0.5em; list-style-type: none; color: #333; font-family: 'Noto Sans KR', sans-serif;">
+  <li style="margin-bottom: 0.5em; position: relative; padding-left: 2em; font-size: 1rem;">
+    <input type="checkbox" id="check1" checked style="position: absolute; left: 0; top: 0.3em; accent-color: #1976d2;">
+    <label for="check1" style="cursor: pointer;">완료된 체크리스트 항목</label>
+  </li>
+  <li style="margin-bottom: 0.5em; position: relative; padding-left: 2em; font-size: 1rem;">
+    <input type="checkbox" id="check2" style="position: absolute; left: 0; top: 0.3em; accent-color: #1976d2;">
+    <label for="check2" style="cursor: pointer;">완료되지 않은 체크리스트 항목</label>
+  </li>
+  <li style="margin-bottom: 0.5em; position: relative; padding-left: 2em; font-size: 1rem;">
+    <input type="checkbox" id="check3" style="position: absolute; left: 0; top: 0.3em; accent-color: #1976d2;">
+    <label for="check3" style="cursor: pointer;">체크리스트 항목 3</label>
+  </li>
+</ul>
+<!-- 인용구 스타일 -->
+<blockquote style="border-left: 4px solid #1976d2; padding: 0.5em 1em; margin: 1.5em 0; font-style: italic; color: #1565c0; background-color: #e3f2fd; font-family: 'Noto Sans KR', sans-serif; font-size: 1rem;">
+  다른 출처에서 인용한 내용이나 특별히 강조하고 싶은 구절을 blockquote 태그로 표시합니다. 파란색 세로선과 연한 배경으로 일반 텍스트와 구분됩니다.
+</blockquote>
+<!-- 코드 블록 -->
+<pre style="background-color: #f5f5f5; border-radius: 4px; padding: 1em; overflow: auto; margin: 1.5em 0; border-left: 4px solid #1976d2; font-family: 'Consolas', 'Monaco', monospace; font-size: 1rem; color: #333;"><code style="font-family: 'Consolas', 'Monaco', monospace; color: #1565c0;">// 코드 블록 예시
+function helloWorld() {
+  console.log("안녕하세요, 세계!");
+}
+helloWorld();</code></pre>
+<!-- 인라인 코드 -->
+본문 중간에 <code style="background-color: #f5f5f5; padding: 0.2em 0.4em; border-radius: 3px; font-family: 'Consolas', 'Monaco', monospace; font-size: 1rem; color: #1565c0;">인라인 코드</code>를 삽입할 때 사용합니다.
+<!-- 구분선 -->
+<hr style="border: 0; height: 1px; background-image: linear-gradient(to right, rgba(25, 118, 210, 0), rgba(25, 118, 210, 0.75), rgba(25, 118, 210, 0)); margin: 2em 0;">
+<!-- 숫자 리스트 -->
+<ol style="margin-bottom: 1.2em; padding-left: 2em; color: #333; font-family: 'Noto Sans KR', sans-serif;">
+  <li style="margin-bottom: 0.5em; position: relative; font-size: 1rem;">순서가 있는 리스트 항목 1</li>
+  <li style="margin-bottom: 0.5em; position: relative; font-size: 1rem;">순서가 있는 리스트 항목 2</li>
+  <li style="margin-bottom: 0.5em; position: relative; font-size: 1rem;">순서가 있는 리스트 항목 3</li>
+</ol>
+<!-- 불릿 리스트 -->
+<ul style="margin-bottom: 1.2em; padding-left: 2em; list-style-type: none; color: #333; font-family: 'Noto Sans KR', sans-serif;">
+  <li style="margin-bottom: 0.5em; position: relative; font-size: 1rem;">
+    <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background-color: #1976d2; margin-right: 10px; position: absolute; left: -20px; top: 8px;"></span>
+    순서가 없는 리스트 항목 1
+  </li>
+  <li style="margin-bottom: 0.5em; position: relative; font-size: 1rem;">
+    <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background-color: #1976d2; margin-right: 10px; position: absolute; left: -20px; top: 8px;"></span>
+    순서가 없는 리스트 항목 2
+  </li>
+</ul>
+<!-- 글상자 -->
+<div style="border: 1px solid #bbdefb; padding: 1em; border-radius: 4px; margin: 1.5em 0; background-color: #e3f2fd; font-family: 'Noto Sans KR', sans-serif;">
+  <p style="margin: 0; line-height: 1.6; font-size: 1rem;">글상자는 특정 내용을 시각적으로 구분하여 표시할 때 사용합니다. 연한 파란색 배경과 파란색 테두리로 일반 텍스트와 구분됩니다.</p>
+</div>
+<!-- 경고/주의 상자 -->
+<div style="border-left: 4px solid #ff5722; padding: 1em; border-radius: 4px; margin: 1.5em 0; background-color: #fff3e0; color: #e64a19; font-family: 'Noto Sans KR', sans-serif;">
+  <div style="font-weight: 700; margin-bottom: 0.5em; font-size: 1.1rem;">⚠️ 주의</div>
+  <p style="margin: 0; line-height: 1.6; font-size: 1rem;">주의가 필요한 내용을 표시할 때 사용합니다. 경고나 주의사항 등을 강조하고 싶을 때 유용합니다.</p>
+</div>
+<!-- 메모/노트 박스 -->
+<div style="border-left: 4px solid #2196f3; padding: 1em; border-radius: 4px; margin: 1.5em 0; background-color: #e3f2fd; color: #0d47a1; font-family: 'Noto Sans KR', sans-serif;">
+  <div style="font-weight: 700; margin-bottom: 0.5em; font-size: 1.1rem;">📝 메모</div>
+  <p style="margin: 0; line-height: 1.6; font-size: 1rem;">팁이나 부가적인 정보를 제공할 때 사용하는 메모 박스입니다.</p>
+</div>
+<!-- 링크 스타일 -->
+<a href="#" style="color: #1e88e5; text-decoration: none; font-weight: 700; font-family: 'Noto Sans KR', sans-serif; position: relative; display: inline-block; overflow: hidden; padding-bottom: 2px; background: linear-gradient(to right, #1976d2, #1e88e5); background-size: 100% 2px; background-position: 0 100%; background-repeat: no-repeat; text-shadow: 0px 0px 1px rgba(25, 118, 210, 0.1); font-size: 1rem;">일반 링크 스타일</a>
+<!-- 다운로드 링크 -->
+<a href="#" style="display: inline-block; padding: 0.5em 1em; background-color: #1976d2; color: white; text-decoration: none; border-radius: 4px; font-weight: 600; margin: 1em 0; font-family: 'Noto Sans KR', sans-serif; font-size: 1rem;">📥 다운로드 링크</a>
+<!-- 표 스타일 -->
+<table style="width: 100%; border-collapse: collapse; margin: 1.5em 0; font-family: 'Noto Sans KR', sans-serif;">
+  <thead>
+    <tr>
+      <th style="border: 1px solid #bbdefb; padding: 0.5em; text-align: left; background-color: #1976d2; color: white; font-weight: 700; font-size: 1rem;">헤더 1</th>
+      <th style="border: 1px solid #bbdefb; padding: 0.5em; text-align: left; background-color: #1976d2; color: white; font-weight: 700; font-size: 1rem;">헤더 2</th>
+      <th style="border: 1px solid #bbdefb; padding: 0.5em; text-align: left; background-color: #1976d2; color: white; font-weight: 700; font-size: 1rem;">헤더 3</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="border: 1px solid #bbdefb; padding: 0.5em; text-align: left; font-size: 1rem;">데이터 1</td>
+      <td style="border: 1px solid #bbdefb; padding: 0.5em; text-align: left; font-size: 1rem;">데이터 2</td>
+      <td style="border: 1px solid #bbdefb; padding: 0.5em; text-align: left; font-size: 1rem;">데이터 3</td>
+    </tr>
+    <tr style="background-color: #e3f2fd;">
+      <td style="border: 1px solid #bbdefb; padding: 0.5em; text-align: left; font-size: 1rem;">데이터 4</td>
+      <td style="border: 1px solid #bbdefb; padding: 0.5em; text-align: left; font-size: 1rem;">데이터 5</td>
+      <td style="border: 1px solid #bbdefb; padding: 0.5em; text-align: left; font-size: 1rem;">데이터 6</td>
+    </tr>
+  </tbody>
+</table>
+<!-- 강조 박스 (기존 p 태그 강조와 다른 형태) -->
+<div style="background-color: #1976d2; color: white; padding: 1em; border-radius: 4px; margin: 1.5em 0; font-family: 'Noto Sans KR', sans-serif;">
+  <p style="margin: 0; line-height: 1.6; font-weight: 600; font-size: 1rem;">매우 중요한 내용을 강조하기 위한 박스입니다. 파란색 배경에 흰색 글자로 눈에 잘 띄도록 디자인되었습니다.</p>
+</div>
+
+<!-- Q&A 스타일 (수정됨) -->
+<div style="margin: 1.5em 0; font-family: 'Noto Sans KR', sans-serif;">
+  <div style="font-weight: 700; color: #1976d2; margin-bottom: 0.5em; font-size: 1.1rem;">
+    <span style="display: inline-block; width: 24px; height: 24px; line-height: 24px; text-align: center; background-color: #1976d2; color: white; border-radius: 50%; margin-right: 8px;">Q</span>질문 제목을 여기에 작성합니다. Q 아이콘과 같은 줄에 텍스트가 바로 이어집니다. 이렇게 하면 질문-답변 형태가 자연스럽게 유지됩니다.
+
+  </div>
+  <div style="margin-left: 32px; margin-bottom: 1.5em; font-size: 1rem; line-height: 1.6; color: #333;">
+    답변 내용을 여기에 작성합니다. A 아이콘이 없어 더 깔끔한 디자인입니다.
+  </div>
+</div>
+
+<!-- 하이라이트/형광펜 효과 -->
+이 문장에서 <mark style="background-color: #bbdefb; color: #1565c0; padding: 0 3px; border-radius: 2px; font-family: 'Noto Sans KR', sans-serif; font-size: 1rem;">특별히 강조하고 싶은 부분</mark>은 mark 태그로 하이라이트합니다.
+
+<!-- 키보드 입력 표시 -->
+단축키 <kbd style="background-color: #f5f5f5; border: 1px solid #ddd; border-radius: 3px; padding: 2px 5px; font-family: 'Consolas', 'Monaco', monospace; font-size: 1rem; color: #1565c0;">Ctrl</kbd> + <kbd style="background-color: #f5f5f5; border: 1px solid #ddd; border-radius: 3px; padding: 2px 5px; font-family: 'Consolas', 'Monaco', monospace; font-size: 1rem; color: #1565c0;">C</kbd>를 사용하여 복사합니다.
+
+<!-- 정의 스타일 -->
+<dl style="margin: 1.5em 0; font-family: 'Noto Sans KR', sans-serif;">
+  <dt style="font-weight: 700; color: #1565c0; margin-bottom: 0.3em; font-size: 1rem;">용어</dt>
+  <dd style="margin-left: 2em; margin-bottom: 1em; font-size: 1rem;">용어에 대한 설명이나 정의를 제공합니다. 전문용어나 개념을 설명할 때 유용합니다.</dd>
+  
+  <dt style="font-weight: 700; color: #1565c0; margin-bottom: 0.3em; font-size: 1rem;">또 다른 용어</dt>
+  <dd style="margin-left: 2em; margin-bottom: 1em; font-size: 1rem;">두 번째 용어에 대한 설명입니다.</dd>
+</dl>
+
+<!-- 각주/미주 스타일 -->
+<p style="font-size: 1rem; line-height: 1.8; margin-bottom: 1.2em; color: #333; font-family: 'Noto Sans KR', sans-serif;">
+  이 문장에는 각주가 포함되어 있습니다.<sup style="color: #1976d2; font-weight: 600; font-size: 0.8em;"><a href="#footnote1" id="ref1" style="text-decoration: none; color: #1976d2;">[1]</a></sup> 각주는 참조나 부가 설명을 제공할 때 유용합니다.
+</p>
+
+<div style="margin-top: 3em; padding-top: 1em; border-top: 1px solid #bbdefb; font-size: 1rem; color: #666; font-family: 'Noto Sans KR', sans-serif;">
+  <p id="footnote1" style="margin-bottom: 0.5em; line-height: 1.6; font-size: 1rem;">
+    <sup style="color: #1976d2; font-weight: 600;"><a href="#ref1" style="text-decoration: none; color: #1976d2;">[1]</a></sup> 
+    여기에 각주 내용이 들어갑니다. 출처나 추가 설명을 제공합니다.
+  </p>
+</div>
+
+<!-- 접기/펼치기 (아코디언) -->
+<details style="border: 1px solid #bbdefb; border-radius: 4px; margin: 1.5em 0; font-family: 'Noto Sans KR', sans-serif;">
+  <summary style="padding: 0.5em 1em; background-color: #e3f2fd; font-weight: 600; color: #1565c0; cursor: pointer; font-size: 1rem;">접기/펼치기 기능 (클릭하여 내용 보기)</summary>
+  <div style="padding: 1em;">
+    <p style="margin: 0; line-height: 1.6; font-size: 1rem;">
+      여기에 숨겨진 내용이 표시됩니다. 길거나 부가적인 정보를 접어두고 필요할 때만 펼쳐서 볼 수 있게 합니다.
+    </p>
+  </div>
+</details>

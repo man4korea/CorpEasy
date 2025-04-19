@@ -1,38 +1,69 @@
 // 📁 frontend/src/data/cojiKnowledgeBase.ts
-// Create at 2504191655
+// Create at 2504191240
 
 /**
- * 코지 챗봇의 기본 지식 베이스
- * 기본 응답과 자주 묻는 질문에 대한 답변을 포함
+ * 코지 챗봇 지식 베이스
+ * - 기본 응답 템플릿
+ * - 문서 참조 메타데이터
  */
 export const CojiKnowledgeBase = {
+  // 기본 응답 메시지
   responses: {
-    greeting: "안녕하세요! 코지에요 😊 CorpEasy에서 무엇을 도와드릴까요?",
-    noAnswer: "음... 그 부분은 잘 모르겠어요. 다른 질문을 해주시겠어요? 🤔",
-    error: "죄송해요, 응답을 생성하는 데 문제가 발생했어요. 잠시 후 다시 시도해주세요! ⚠️",
-    thanks: "도움이 되어 기뻐요! 또 질문이 있으시면 언제든지 물어봐주세요! ✨"
+    greeting: "안녕하세요! 저는 CorpEasy의 AI 비서 코지입니다. 어떻게 도와드릴까요? 유튜브 분석, 블로그 생성, AI 모델 사용 등에 대해 물어보세요!",
+    fallback: "죄송해요, 지금은 그 정보를 찾을 수 없어요. 다른 방식으로 질문해 주시겠어요?",
+    loading: "잠시만 기다려주세요, 답변을 찾고 있어요...",
+    error: "죄송합니다, 응답을 생성하는 중에 오류가 발생했어요. 잠시 후 다시 시도해 주세요.",
+    docsReference: "제가 CorpEasy 문서에서 찾은 정보예요: "
   },
   
-  faqs: [
-    {
-      question: "CorpEasy는 어떤 서비스인가요?",
-      answer: "CorpEasy는 중소기업과 영세기업을 위한 AI 올인원 플랫폼이에요! 콘텐츠 분석, 지식정보 블로그, 트렌드 알림, 데이터 분석, AI 비서 생성 등 다양한 기능을 제공해요. 비즈니스 운영에 필요한 AI 도구들을 한 곳에서 편리하게 사용하실 수 있어요! 💡"
+  // 문서 메타데이터
+  docsMeta: {
+    contentAnalyzer: {
+      path: "content_analyzer_guide.md",
+      keywords: ["콘텐츠", "분석", "유튜브", "영상", "요약", "번역", "상세분석", "블로그", "자막"]
     },
-    {
-      question: "비즈 애널리틱스는 어떻게 사용하나요?",
-      answer: "비즈 애널리틱스는 데이터 분석기, 리포트 생성기, 의사결정 지원 세 가지 도구로 구성되어 있어요. 엑셀이나 CSV 파일을 업로드하면 AI가 자동으로 분석하고 인사이트를 제공해 드려요. 복잡한 데이터도 쉽게 이해할 수 있도록 도와드릴게요! 📊"
+    blogFormat: {
+      path: "blog_output_format.txt",
+      keywords: ["블로그", "출력", "형식", "포맷", "HTML", "구조"]
     },
-    {
-      question: "AI 비서 생성기를 어떻게 활용하나요?",
-      answer: "AI 비서 생성기는 회사의 문서나 메뉴얼을 업로드하면, 그 내용을 학습한 맞춤형 AI 챗봇을 만들어 줘요! 생성된 챗봇은 링크를 통해 귀사의 웹사이트에 쉽게a 삽입할 수 있어요. 고객 응대나 내부 직원 지원용으로 활용하시면 좋답니다. ✨"
+    blogStyleGuide: {
+      path: "blog_style_guide.txt",
+      keywords: ["블로그", "스타일", "가이드", "문체", "어조", "SEO"]
     },
-    {
-      question: "프리미엄 기능은 무엇인가요?",
-      answer: "프리미엄 기능으로는 의사결정 지원, 고급 AI 모델 사용, 대용량 데이터 처리, 개인화된 트렌드 알림 등이 포함되어 있어요! 더 전문적이고 심층적인 분석이 필요하신 경우 프리미엄 서비스를 이용해보세요. 문의사항은 설정 > 구독 관리에서 확인하실 수 있어요. ❤️"
+    htmlStyleReference: {
+      path: "html_style_reference.txt", 
+      keywords: ["HTML", "스타일", "참조", "태그", "요소", "구조"]
     },
-    {
-      question: "콘텐츠 상세분석기는 어떤 콘텐츠를 분석할 수 있나요?",
-      answer: "콘텐츠 상세분석기는 유튜브 영상, 웹 페이지, 뉴스 기사, 블로그 포스트 등 다양한 온라인 콘텐츠를 분석할 수 있어요! URL만 입력하시면 AI가 콘텐츠의 핵심 내용, 주요 키워드, 감성 분석 결과 등을 제공해 드려요. 트렌드 파악과 경쟁사 분석에 매우 유용하답니다! 🔍"
+    naturalWriting: {
+      path: "natural_human_blog_writing_instruction.txt",
+      keywords: ["자연스러운", "글쓰기", "블로그", "작성", "인간적", "톤"]
+    },
+    blogPrompt: {
+      path: "Blog_5_Step_Prompt.txt",
+      keywords: ["블로그", "5단계", "프롬프트", "작성", "가이드", "SEO"]
     }
-  ]
+  },
+
+  // 문서 내용 캐시 (실시간으로 업데이트됨)
+  docsCache: {} as Record<string, string>,
+  
+  // 문서 참조 함수 - 키워드 기반으로 관련 문서 찾기
+  findRelevantDocs(query: string): string[] {
+    const relevantDocs: string[] = [];
+    const queryWords = query.toLowerCase().split(/\s+/);
+    
+    // 모든 문서 메타데이터 순회
+    Object.entries(this.docsMeta).forEach(([key, meta]) => {
+      // 키워드 매칭
+      const keywordMatches = meta.keywords.some(keyword => 
+        queryWords.some(word => word.includes(keyword.toLowerCase()) || keyword.toLowerCase().includes(word))
+      );
+      
+      if (keywordMatches) {
+        relevantDocs.push(meta.path);
+      }
+    });
+    
+    return relevantDocs;
+  }
 };

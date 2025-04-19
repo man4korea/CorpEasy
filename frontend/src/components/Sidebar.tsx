@@ -1,7 +1,7 @@
 // 📁 frontend/src/components/Sidebar.tsx
-// Create at 2504191642
+// Create at 2504191805
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   PlusIcon,
@@ -14,7 +14,7 @@ import {
   QuestionMarkCircleIcon,
   Cog6ToothIcon,
   ChevronRightIcon,
-  ChevronUpIcon
+  XMarkIcon
 } from '@heroicons/react/24/outline';
 
 interface SidebarProps {
@@ -23,216 +23,213 @@ interface SidebarProps {
 }
 
 /**
- * 미니멀리스트 사이드바 컴포넌트
- * CorpEasy UI/UX 가이드라인 준수
+ * 사이드바 컴포넌트 - 기본 숨겨진 상태
+ * 햄버거 버튼 클릭 시 표시됨
  */
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
-  const [expandedMenu, setExpandedMenu] = useState<string | null>('비즈 애널리틱스');
+  const [expandedMenus, setExpandedMenus] = React.useState<string[]>([]);
   const location = useLocation();
   
-  // 메뉴 토글 함수
+  // 메뉴 항목 토글 함수
   const toggleMenu = (menuName: string) => {
-    if (expandedMenu === menuName) {
-      setExpandedMenu(null);
+    if (expandedMenus.includes(menuName)) {
+      setExpandedMenus(expandedMenus.filter(name => name !== menuName));
     } else {
-      setExpandedMenu(menuName);
+      setExpandedMenus([...expandedMenus, menuName]);
     }
   };
   
-  // 현재 활성화된 메뉴 확인
+  // 현재 경로 확인 유틸리티 함수
   const isActive = (path: string) => {
     return location.pathname === path;
   };
 
+  // 메뉴 데이터 정의
+  const menuItems = [
+    {
+      name: '대시보드',
+      to: '/',
+      icon: <PlusIcon className="h-5 w-5" />,
+    },
+    {
+      name: '콘텐츠 상세분석기',
+      to: '/content-analyzer',
+      icon: <MagnifyingGlassIcon className="h-5 w-5" />,
+    },
+    {
+      name: '지식정보 블로그',
+      to: '/knowledge-blog',
+      icon: <ClipboardDocumentIcon className="h-5 w-5" />,
+    },
+    {
+      name: '업계 트렌드 알리미',
+      to: '/trend-alerts',
+      icon: <ClockIcon className="h-5 w-5" />,
+      badge: "NEW"
+    },
+    {
+      name: '크리에이티브 스튜디오',
+      to: '/creative',
+      icon: <DocumentTextIcon className="h-5 w-5" />,
+      submenu: [
+        {
+          name: '카탈로그 제작기',
+          to: '/creative/catalog-maker',
+        },
+        {
+          name: '마케팅 콘텐츠 제작기',
+          to: '/creative/marketing-content',
+        },
+        {
+          name: '문서 생성기',
+          to: '/creative/document-generator',
+        }
+      ]
+    },
+    {
+      name: '비즈 애널리틱스',
+      to: '/analytics',
+      icon: <ChartBarSquareIcon className="h-5 w-5" />,
+      submenu: [
+        {
+          name: '데이터 분석기',
+          to: '/analytics/data-analyzer',
+        },
+        {
+          name: '리포트 생성기',
+          to: '/analytics/report-generator',
+        },
+        {
+          name: '의사결정 지원',
+          to: '/analytics/decision-support',
+          badge: "Premium"
+        }
+      ]
+    },
+    {
+      name: 'AI 비서 생성기',
+      to: '/chatbot-builder',
+      icon: <ChatBubbleLeftRightIcon className="h-5 w-5" />,
+    },
+    {
+      name: 'AI 활용 도우미',
+      to: '/ai-helper',
+      icon: <QuestionMarkCircleIcon className="h-5 w-5" />,
+      submenu: [
+        {
+          name: 'AI 활용 도우미',
+          to: '/ai-helper/usage-guide',
+        },
+        {
+          name: 'AI Agent 활용 도우미',
+          to: '/ai-helper/agent-guide',
+        }
+      ]
+    },
+    {
+      name: '설정',
+      to: '/settings',
+      icon: <Cog6ToothIcon className="h-5 w-5" />,
+      submenu: [
+        {
+          name: '개인정보 설정',
+          to: '/settings/profile',
+        },
+        {
+          name: '알림 설정',
+          to: '/settings/notifications',
+        }
+      ]
+    }
+  ];
+
   return (
     <div 
-      className={`fixed inset-y-0 left-0 transform ${
+      className={`fixed inset-y-0 left-0 z-40 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out ${
         isOpen ? 'translate-x-0' : '-translate-x-full'
-      } md:translate-x-0 z-30 w-64 bg-white transition-transform duration-200 ease-in-out overflow-y-auto`}
+      }`}
     >
-      {/* 로고 영역 */}
-      <div className="p-6 border-b border-gray-100">
-        <Link to="/" className="text-blue-500 text-3xl font-bold" style={{ fontFamily: 'Pacifico, cursive', textShadow: '2px 2px 4px rgba(0, 0, 0, 0.1)', letterSpacing: '0.5px' }}>
+      {/* 닫기 버튼 */}
+      <div className="absolute top-4 right-4">
+        <button
+          onClick={() => setIsOpen(false)}
+          className="rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-500"
+          aria-label="Close sidebar"
+        >
+          <XMarkIcon className="h-6 w-6" />
+        </button>
+      </div>
+      
+      {/* 로고 */}
+      <div className="p-6 mt-4">
+        <Link to="/" className="text-blue-500 text-2xl font-bold" style={{ fontFamily: 'Pacifico, cursive', textShadow: '2px 2px 4px rgba(0, 0, 0, 0.1)', letterSpacing: '0.5px' }}>
           CorpEasy
         </Link>
       </div>
-
-      {/* 메뉴 영역 */}
-      <nav className="p-4">
-        <ul className="space-y-4">
-          {/* 대시보드 */}
-          <li>
-            <Link 
-              to="/" 
-              className={`flex items-center p-3 rounded-md ${
-                isActive('/') ? 'bg-blue-50 text-blue-500' : 'text-gray-700 hover:bg-gray-50'
+      
+      {/* 메뉴 목록 */}
+      <nav className="mt-5 px-4">
+        {menuItems.map((item, index) => (
+          <div key={index} className="mb-2">
+            {/* 메인 메뉴 항목 */}
+            <div
+              className={`flex items-center justify-between px-3 py-2 rounded-md cursor-pointer ${
+                isActive(item.to) 
+                  ? 'bg-blue-50 text-blue-500' 
+                  : 'hover:bg-gray-50'
               }`}
+              onClick={() => item.submenu ? toggleMenu(item.name) : setIsOpen(false)}
             >
-              <PlusIcon className="w-6 h-6 mr-3" />
-              <span className="text-base font-medium">대시보드</span>
-            </Link>
-          </li>
-          
-          {/* 콘텐츠 상세분석기 */}
-          <li>
-            <Link 
-              to="/content-analyzer" 
-              className={`flex items-center p-3 rounded-md ${
-                isActive('/content-analyzer') ? 'bg-blue-50 text-blue-500' : 'text-gray-700 hover:bg-gray-50'
-              }`}
-            >
-              <MagnifyingGlassIcon className="w-6 h-6 mr-3" />
-              <span className="text-base font-medium">콘텐츠 상세분석기</span>
-            </Link>
-          </li>
-          
-          {/* 지식정보 블로그 */}
-          <li>
-            <Link 
-              to="/knowledge-blog" 
-              className={`flex items-center p-3 rounded-md ${
-                isActive('/knowledge-blog') ? 'bg-blue-50 text-blue-500' : 'text-gray-700 hover:bg-gray-50'
-              }`}
-            >
-              <ClipboardDocumentIcon className="w-6 h-6 mr-3" />
-              <span className="text-base font-medium">지식정보 블로그</span>
-            </Link>
-          </li>
-          
-          {/* 업계 트렌드 알리미 */}
-          <li>
-            <Link 
-              to="/trend-alerts" 
-              className={`flex items-center justify-between p-3 rounded-md ${
-                isActive('/trend-alerts') ? 'bg-blue-50 text-blue-500' : 'text-gray-700 hover:bg-gray-50'
-              }`}
-            >
-              <div className="flex items-center">
-                <ClockIcon className="w-6 h-6 mr-3" />
-                <span className="text-base font-medium">업계 트렌드 알리미</span>
-              </div>
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                NEW
-              </span>
-            </Link>
-          </li>
-          
-          {/* 크리에이티브 스튜디오 */}
-          <li>
-            <button 
-              onClick={() => toggleMenu('크리에이티브 스튜디오')}
-              className={`flex items-center justify-between w-full p-3 rounded-md text-left ${
-                expandedMenu === '크리에이티브 스튜디오' ? 'bg-blue-50 text-blue-500' : 'text-gray-700 hover:bg-gray-50'
-              }`}
-            >
-              <div className="flex items-center">
-                <DocumentTextIcon className="w-6 h-6 mr-3" />
-                <span className="text-base font-medium">크리에이티브 스튜디오</span>
-              </div>
-              <ChevronRightIcon className={`w-5 h-5 transition-transform ${expandedMenu === '크리에이티브 스튜디오' ? 'rotate-90' : ''}`} />
-            </button>
-          </li>
-          
-          {/* 비즈 애널리틱스 */}
-          <li>
-            <button 
-              onClick={() => toggleMenu('비즈 애널리틱스')}
-              className={`flex items-center justify-between w-full p-3 rounded-md text-left ${
-                expandedMenu === '비즈 애널리틱스' ? 'bg-blue-50 text-blue-500' : 'text-gray-700 hover:bg-gray-50'
-              }`}
-            >
-              <div className="flex items-center">
-                <ChartBarSquareIcon className="w-6 h-6 mr-3" />
-                <span className="text-base font-medium">비즈 애널리틱스</span>
-              </div>
-              <ChevronUpIcon className={`w-5 h-5 transition-transform ${expandedMenu !== '비즈 애널리틱스' ? 'rotate-180' : ''}`} />
-            </button>
+              <Link
+                to={item.to}
+                className="flex items-center flex-grow"
+                onClick={(e) => item.submenu && e.preventDefault()}
+              >
+                <span className="mr-3 text-gray-500">{item.icon}</span>
+                <span className="font-medium">{item.name}</span>
+              </Link>
+              
+              {item.badge && (
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                  {item.badge}
+                </span>
+              )}
+              
+              {item.submenu && (
+                <ChevronRightIcon 
+                  className={`w-5 h-5 transition-transform ${
+                    expandedMenus.includes(item.name) ? 'rotate-90' : ''
+                  }`} 
+                />
+              )}
+            </div>
             
-            {/* 비즈 애널리틱스 하위메뉴 */}
-            {expandedMenu === '비즈 애널리틱스' && (
-              <ul className="mt-2 ml-4 space-y-2">
-                <li>
-                  <Link 
-                    to="/analytics/data-analyzer" 
-                    className={`flex items-center p-3 rounded-md ${
-                      isActive('/analytics/data-analyzer') ? 'bg-blue-50 text-blue-500' : 'text-gray-600 hover:bg-gray-50'
+            {/* 서브메뉴 */}
+            {item.submenu && expandedMenus.includes(item.name) && (
+              <div className="ml-6 mt-1 mb-2 space-y-1">
+                {item.submenu.map((subItem, subIndex) => (
+                  <Link
+                    key={subIndex}
+                    to={subItem.to}
+                    className={`flex items-center justify-between px-3 py-2 rounded-md text-sm ${
+                      isActive(subItem.to) 
+                        ? 'bg-blue-50 text-blue-500' 
+                        : 'text-gray-700 hover:bg-gray-50'
                     }`}
+                    onClick={() => setIsOpen(false)}
                   >
-                    <span className="text-base">데이터 분석기</span>
+                    <span>{subItem.name}</span>
+                    {subItem.badge && (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                        {subItem.badge}
+                      </span>
+                    )}
                   </Link>
-                </li>
-                <li>
-                  <Link 
-                    to="/analytics/report-generator" 
-                    className={`flex items-center p-3 rounded-md ${
-                      isActive('/analytics/report-generator') ? 'bg-blue-50 text-blue-500' : 'text-gray-600 hover:bg-gray-50'
-                    }`}
-                  >
-                    <span className="text-base">리포트 생성기</span>
-                  </Link>
-                </li>
-                <li>
-                  <Link 
-                    to="/analytics/decision-support" 
-                    className={`flex items-center justify-between p-3 rounded-md ${
-                      isActive('/analytics/decision-support') ? 'bg-blue-50 text-blue-500' : 'text-gray-600 hover:bg-gray-50'
-                    }`}
-                  >
-                    <span className="text-base">의사결정 지원</span>
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                      Premium
-                    </span>
-                  </Link>
-                </li>
-              </ul>
+                ))}
+              </div>
             )}
-          </li>
-          
-          {/* AI 비서 생성기 */}
-          <li>
-            <Link 
-              to="/chatbot-builder" 
-              className={`flex items-center p-3 rounded-md ${
-                isActive('/chatbot-builder') ? 'bg-blue-50 text-blue-500' : 'text-gray-700 hover:bg-gray-50'
-              }`}
-            >
-              <ChatBubbleLeftRightIcon className="w-6 h-6 mr-3" />
-              <span className="text-base font-medium">AI 비서 생성기</span>
-            </Link>
-          </li>
-          
-          {/* AI 활용 도우미 */}
-          <li>
-            <button 
-              onClick={() => toggleMenu('AI 활용 도우미')}
-              className={`flex items-center justify-between w-full p-3 rounded-md text-left ${
-                expandedMenu === 'AI 활용 도우미' ? 'bg-blue-50 text-blue-500' : 'text-gray-700 hover:bg-gray-50'
-              }`}
-            >
-              <div className="flex items-center">
-                <QuestionMarkCircleIcon className="w-6 h-6 mr-3" />
-                <span className="text-base font-medium">AI 활용 도우미</span>
-              </div>
-              <ChevronRightIcon className={`w-5 h-5 transition-transform ${expandedMenu === 'AI 활용 도우미' ? 'rotate-90' : ''}`} />
-            </button>
-          </li>
-          
-          {/* 설정 */}
-          <li>
-            <button 
-              onClick={() => toggleMenu('설정')}
-              className={`flex items-center justify-between w-full p-3 rounded-md text-left ${
-                expandedMenu === '설정' ? 'bg-blue-50 text-blue-500' : 'text-gray-700 hover:bg-gray-50'
-              }`}
-            >
-              <div className="flex items-center">
-                <Cog6ToothIcon className="w-6 h-6 mr-3" />
-                <span className="text-base font-medium">설정</span>
-              </div>
-              <ChevronRightIcon className={`w-5 h-5 transition-transform ${expandedMenu === '설정' ? 'rotate-90' : ''}`} />
-            </button>
-          </li>
-        </ul>
+          </div>
+        ))}
       </nav>
     </div>
   );

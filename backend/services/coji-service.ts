@@ -224,7 +224,7 @@ export async function generateCojiResponse(message: string): Promise<string> {
     }
     
     // GPT-3.5 API로 응답 생성
-    const prompt = `당신은 코지(Coji)라는 CorpEasy의 AI 어시스턴트입니다. 다음 지침을 반드시 따르세요:
+    const systemPrompt = `당신은 코지(Coji)라는 CorpEasy의 AI 어시스턴트입니다. 다음 지침을 반드시 따르세요:
 
 1. 친절하고 상냥한 톤으로 응답하세요.
 2. 한국어로 대화하세요.
@@ -235,15 +235,19 @@ export async function generateCojiResponse(message: string): Promise<string> {
 7. 모르는 내용은 솔직하게 모른다고 말하세요.
 8. XML이나 HTML 태그는 절대 사용하지 마세요.
 9. HTML 태그는 포함하지 마세요.
-10. 응답은 순수 텍스트로만 작성하세요.
+10. 응답은 순수 텍스트로만 작성하세요.`;
 
-사용자 질문: ${message}
+    const userContent = `사용자 질문: ${message}
 
 관련 문서 내용:
 ${docsContent.length > 0 ? docsContent : "관련 문서를 찾을 수 없습니다."}`;
 
     try {
-      const response = await callGpt35(prompt);
+      // 메시지 배열 형식으로 변경
+      const response = await callGpt35([
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userContent }
+      ]);
       return stripHtmlTags(response);
     } catch (error) {
       logger.error('GPT-3.5 응답 오류:', error);
@@ -257,12 +261,13 @@ ${docsContent.length > 0 ? docsContent : "관련 문서를 찾을 수 없습니�
 }
 
 // 🧠 GPT-3.5 호출 함수 정의
-export const callGpt35 = async (prompt: string): Promise<string> => {
+export const callGpt35 = async (messages: Array<{role: string, content: string}>): Promise<string> => {
   logger.info('GPT-3.5 프롬프트 호출 시작');
   
   try {
-    // 이미 캐시된 응답이 있는지 확인
-    const cacheKey = `gpt:${prompt.substring(0, 100)}`;
+    // 캐싱을 위한 키 생성 - 모든 메시지 내용을 포함
+    const messageString = messages.map(m => `${m.role}: ${m.content}`).join('\n');
+    const cacheKey = `gpt:${messageString.substring(0, 100)}`;
     const cachedResponse = await getFromCache(cacheKey);
     
     if (cachedResponse) {
@@ -281,7 +286,7 @@ export const callGpt35 = async (prompt: string): Promise<string> => {
     const apiUrl = 'https://api.openai.com/v1/chat/completions';
     const requestBody = {
       model: 'gpt-3.5-turbo',
-      messages: [{ role: 'system', content: prompt }],
+      messages: messages,
       temperature: 0.7,
       max_tokens: 1000
     };

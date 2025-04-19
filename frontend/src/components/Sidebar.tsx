@@ -161,7 +161,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
       </div>
       
       {/* 로고 */}
-      <div className="py-3 px-6 mt-2">
+      <div className="py-3 px-6 mt-0">
         <Link to="/" className="text-blue-500 text-2xl font-bold" style={{ fontFamily: 'Pacifico, cursive', textShadow: '2px 2px 4px rgba(0, 0, 0, 0.1)', letterSpacing: '0.5px' }}>
           CorpEasy
         </Link>

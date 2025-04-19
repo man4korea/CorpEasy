@@ -5,7 +5,7 @@ import React, { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Topbar from './Topbar';
-import { Coji } from '../pages/Coji';
+// Coji 컴포넌트 제거 - App.tsx에서만 렌더링하도록 수정
 
 /**
  * 레이아웃 컴포넌트
@@ -52,8 +52,7 @@ const Layout: React.FC = () => {
         </main>
       </div>
       
-      {/* 코지 챗봇 */}
-      <Coji />
+      {/* 코지 챗봇 제거 */}
     </div>
   );
 };

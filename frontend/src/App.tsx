@@ -86,7 +86,7 @@ const App: React.FC = () => {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       
-      {/* 코지 챗봇은 전역으로 표시 */}
+      {/* 코지 챗봇은 전역으로 표시 - 유지 */}
       <Coji />
     </Router>
   );

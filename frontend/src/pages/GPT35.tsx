@@ -1,4 +1,6 @@
 // 📁 src/pages/GPT35.tsx
+// Create at 2504201710 Ver1.3
+
 import React, { useState, useCallback } from 'react';
 import axios from 'axios';
 
@@ -7,6 +9,7 @@ const GPT35 = () => {
   const [responses, setResponses] = useState<Array<{text: string, timestamp: string}>>([]);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [apiDebug, setApiDebug] = useState<string>('');
 
   const clearResponses = useCallback(() => {
     setResponses([]);
@@ -18,9 +21,14 @@ const GPT35 = () => {
 
     setIsLoading(true);
     setError('');
+    setApiDebug('');
 
     try {
-      const response = await axios.post('/api/openai/gpt35', {
+      console.log('🚀 GPT-3.5 API 요청 전송:', { input });
+      setApiDebug('요청 보내는 중...');
+      
+      // 요청 내용 생성
+      const requestBody = {
         messages: [
           {
             role: 'system',
@@ -31,15 +39,92 @@ const GPT35 = () => {
             content: input 
           }
         ]
-      });
+      };
+      
+      // 요청 상세 정보 로깅
+      console.log('📝 요청 상세:', JSON.stringify(requestBody, null, 2));
+      setApiDebug(prev => prev + '\n요청 데이터: ' + JSON.stringify(requestBody).substring(0, 100) + '...');
+      
+      // API 경로 수정: '/api/openai/gpt35' → '/api/gpt35'
+      const response = await axios.post('/api/gpt35', requestBody);
+      
+      // 응답 로깅
+      console.log('✅ GPT-3.5 API 응답 수신:', response);
+      setApiDebug(prev => prev + `\n응답 상태: ${response.status}\n응답 데이터: ${JSON.stringify(response.data).substring(0, 150)}...`);
+      
+      // 응답 데이터 추출 로직 개선
+      let responseText = '';
+      if (typeof response.data === 'string') {
+        responseText = response.data;
+      } else if (response.data && typeof response.data === 'object') {
+        // 응답 객체에서 텍스트 데이터 추출
+        responseText = response.data.content || 
+                       response.data.message || 
+                       response.data.text || 
+                       response.data.response || 
+                       JSON.stringify(response.data);
+      } else {
+        responseText = '응답을 받지 못했습니다.';
+      }
 
       setResponses(prev => [...prev, {
-        text: response.data?.content || '응답을 받지 못했습니다.',
+        text: responseText,
         timestamp: new Date().toISOString()
       }]);
       setInput('');
     } catch (err: any) {
-      setError(err.response?.data?.message || err.message || '오류가 발생했습니다.');
+      console.error('❌ GPT-3.5 API 오류:', err);
+      
+      // 상세 오류 정보 추출 및 로깅
+      let responseData = '';
+      try {
+        if (err.response) {
+          responseData = `상태: ${err.response.status}, 데이터: ${JSON.stringify(err.response.data)}`;
+          console.error('📌 응답 오류 상세:', err.response);
+        }
+      } catch (e) {
+        responseData = '응답 데이터 파싱 실패';
+      }
+      
+      setApiDebug(prev => prev + `\n오류 발생: ${err.message}\n${responseData}`);
+      
+      const errorMessage = err.response?.data?.message || 
+                          err.response?.data?.error || 
+                          err.message || 
+                          '오류가 발생했습니다.';
+                          
+      setError(`GPT-3.5 API 호출 오류: ${errorMessage}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // 테스트 메시지 입력
+  const handleTestMessage = () => {
+    setInput('안녕하세요! 간단한 자기소개를 해주세요.');
+  };
+
+  // API 상태 확인
+  const checkApiStatus = async () => {
+    try {
+      setIsLoading(true);
+      setApiDebug('API 상태 확인 중...');
+      
+      // API 상태 확인 경로도 수정
+      const response = await axios.get('/api/gpt35/status');
+      console.log('API 상태 확인 결과:', response.data);
+      
+      setApiDebug(prev => prev + `\nAPI 상태: ${JSON.stringify(response.data)}`);
+      
+      if (response.data.apiKeyValid) {
+        setError(`API 키 상태: 유효함 (${response.data.keyType} 타입)`);
+      } else {
+        setError('API 키가 유효하지 않습니다. 서버 환경 변수를 확인해주세요.');
+      }
+    } catch (err: any) {
+      console.error('API 상태 확인 오류:', err);
+      setError(`API 상태 확인 실패: ${err.message}`);
+      setApiDebug(prev => prev + `\n상태 확인 오류: ${err.message}`);
     } finally {
       setIsLoading(false);
     }
@@ -56,12 +141,28 @@ const GPT35 = () => {
             </div>
             <h1 className="text-xl font-bold">OpenAI GPT-3.5</h1>
           </div>
-          <button
-            onClick={clearResponses}
-            className="px-3 py-1 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded"
-          >
-            대화 내용 지우기
-          </button>
+          <div className="flex space-x-2">
+            <button
+              type="button"
+              onClick={checkApiStatus}
+              className="px-3 py-1 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded"
+            >
+              API 상태 확인
+            </button>
+            <button
+              type="button"
+              onClick={handleTestMessage}
+              className="px-3 py-1 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded"
+            >
+              테스트 메시지
+            </button>
+            <button
+              onClick={clearResponses}
+              className="px-3 py-1 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded"
+            >
+              대화 내용 지우기
+            </button>
+          </div>
         </div>
       </div>
 
@@ -69,8 +170,15 @@ const GPT35 = () => {
       <div className="flex-1 overflow-y-auto p-4">
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-md mb-4">
-            <p className="font-medium">오류 발생</p>
+            <p className="font-medium">상태:</p>
             <p>{error}</p>
+          </div>
+        )}
+        
+        {apiDebug && (
+          <div className="bg-gray-50 border border-gray-200 text-gray-800 p-4 rounded-md mb-4 font-mono text-xs">
+            <p className="font-medium">디버깅 정보:</p>
+            <pre className="whitespace-pre-wrap">{apiDebug}</pre>
           </div>
         )}
         
@@ -85,7 +193,7 @@ const GPT35 = () => {
                 {new Date(response.timestamp).toLocaleTimeString()}
               </span>
             </div>
-            <div className="mt-2 prose prose-sm max-w-none">
+            <div className="mt-2 prose prose-sm max-w-none whitespace-pre-wrap">
               {response.text}
             </div>
           </div>
@@ -118,7 +226,7 @@ const GPT35 = () => {
           />
           <button
             type="submit"
-            disabled={isLoading}
+            disabled={isLoading || !input.trim()}
             className="bg-blue-600 text-white px-4 py-2 rounded-r-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:bg-blue-400"
           >
             {isLoading ? '생성 중...' : '전송'}

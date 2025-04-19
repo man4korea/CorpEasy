@@ -234,7 +234,7 @@ export async function generateCojiResponse(message: string): Promise<string> {
 6. 짧고 명확한 문장으로 응답하세요.
 7. 모르는 내용은 솔직하게 모른다고 말하세요.
 8. XML이나 HTML 태그는 절대 사용하지 마세요.
-9. <html>, <head>, <body>, <!DOCTYPE>, <div>, <span> 등의 태그를 절대 포함하지 마세요.
+9. HTML 태그는 포함하지 마세요.
 10. 응답은 순수 텍스트로만 작성하세요.
 
 사용자 질문: ${message}
@@ -242,13 +242,13 @@ export async function generateCojiResponse(message: string): Promise<string> {
 관련 문서 내용:
 ${docsContent.length > 0 ? docsContent : "관련 문서를 찾을 수 없습니다."}`;
 
-try {
-  const response = await callGpt35(prompt);
-  return stripHtmlTags(response);
-} catch (error) {
-  logger.error('GPT-3.5 응답 오류:', error);
-  return "죄송해요, 현재 답변을 생성하는 데 문제가 발생했어요. 잠시 후 다시 시도해주세요! 🙏";
-}
+    try {
+      const response = await callGpt35(prompt);
+      return stripHtmlTags(response);
+    } catch (error) {
+      logger.error('GPT-3.5 응답 오류:', error);
+      return "죄송해요, 현재 답변을 생성하는 데 문제가 발생했어요. 잠시 후 다시 시도해주세요! 🙏";
+    }
 
   } catch (error) {
     logger.error('코지 응답 생성 오류:', error);
@@ -256,29 +256,61 @@ try {
   }
 }
 
-// 🧠 GPT-3.5 호출 함수 정의 (이 파일 내 임시 정의 가능)
+// 🧠 GPT-3.5 호출 함수 정의
 export const callGpt35 = async (prompt: string): Promise<string> => {
   logger.info('GPT-3.5 프롬프트 호출 시작');
-  // OpenAI API 호출 로직 (실제 API 키와 함께 구현 필요)
+  
   try {
-    // FIXME: 실제 OpenAI API 구현으로 교체 필요
-    // const openai = new OpenAI({
-    //   apiKey: process.env.OPENAI_API_KEY
-    // });
-    // 
-    // const response = await openai.chat.completions.create({
-    //   model: "gpt-3.5-turbo",
-    //   messages: [{ role: "system", content: prompt }],
-    //   temperature: 0.7,
-    //   max_tokens: 1000
-    // });
-    // 
-    // return response.choices[0].message.content || "";
+    // 이미 캐시된 응답이 있는지 확인
+    const cacheKey = `gpt:${prompt.substring(0, 100)}`;
+    const cachedResponse = await getFromCache(cacheKey);
     
-    // 임시 모의 응답 (실제 구현 전까지 사용)
-    return `안녕하세요! 코지입니다. 도와드릴게요! 😊 ${prompt.substring(0, 20)}...에 대한 답변입니다.`; 
+    if (cachedResponse) {
+      logger.info('GPT-3.5 캐시된 응답 사용');
+      return cachedResponse;
+    }
+    
+    // OpenAI API 키 확인
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) {
+      logger.error('OpenAI API 키가 설정되지 않았습니다.');
+      return '죄송해요, API 연결에 문제가 있어요. 잠시 후 다시 시도해주세요. 🙏';
+    }
+    
+    // API 요청 옵션
+    const apiUrl = 'https://api.openai.com/v1/chat/completions';
+    const requestBody = {
+      model: 'gpt-3.5-turbo',
+      messages: [{ role: 'system', content: prompt }],
+      temperature: 0.7,
+      max_tokens: 1000
+    };
+    
+    // fetch API로 직접 호출
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify(requestBody)
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      logger.error(`GPT-3.5 API 오류: ${response.status} ${errorText}`);
+      return '죄송해요, 현재 AI 서비스에 연결할 수 없어요. 잠시 후 다시 시도해주세요. ⚠️';
+    }
+    
+    const result = await response.json();
+    const responseText = result.choices[0]?.message?.content || '';
+    
+    // 응답 캐싱 (1시간)
+    await setToCache(cacheKey, responseText, 60 * 60);
+    
+    return responseText;
   } catch (error) {
     logger.error('GPT-3.5 API 호출 오류:', error);
-    throw new Error('GPT-3.5 API 호출 중 오류가 발생했습니다.');
+    return '죄송해요, 응답을 생성하는 중에 문제가 발생했어요. 다시 질문해 주시겠어요? 🙇‍♀️';
   }
 };

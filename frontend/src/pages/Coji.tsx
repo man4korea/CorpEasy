@@ -53,10 +53,46 @@ export const Coji: React.FC = () => {
   const [isTyping, setIsTyping] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
+
+  // 외부 클릭 감지 및 창 닫기 처리
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        chatContainerRef.current && 
+        !chatContainerRef.current.contains(event.target as Node) &&
+        isOpen
+      ) {
+        setIsOpen(false);
+      }
+    };
+
+    // 포커스 변경 감지
+    const handleFocusChange = () => {
+      if (
+        document.activeElement && 
+        chatContainerRef.current && 
+        !chatContainerRef.current.contains(document.activeElement) &&
+        isOpen
+      ) {
+        setIsOpen(false);
+      }
+    };
+
+    // 이벤트 리스너 등록
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('focusin', handleFocusChange);
+    
+    return () => {
+      // 이벤트 리스너 제거
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('focusin', handleFocusChange);
+    };
+  }, [isOpen]);
 
   // 문서 서비스 초기화
   useEffect(() => {
@@ -111,14 +147,14 @@ export const Coji: React.FC = () => {
       const cojiResponse = await cojiService.generateResponse(input.trim());
       
       // HTML 태그 제거하여 순수 텍스트만 표시
-      const sanitizedText = stripHtmlTags(cojiResponse.text);
+      const sanitizedText = stripHtmlTags(cojiResponse.text || "죄송해요, 응답을 받지 못했어요.");
       
       // 응답 추가
       const newCojiMessage: Message = {
         id: uuidv4(),
         text: sanitizedText,
         type: 'coji',
-        emotion: cojiResponse.emotion
+        emotion: cojiResponse.emotion || '😊'
       };
       
       setMessages(prev => [...prev, newCojiMessage]);
@@ -183,6 +219,7 @@ export const Coji: React.FC = () => {
       <AnimatePresence>
         {isOpen && (
           <motion.div
+            ref={chatContainerRef}
             initial={{ opacity: 0, y: 50, scale: 0.3 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 50, scale: 0.3 }}

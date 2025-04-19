@@ -8,6 +8,7 @@ import { fileURLToPath } from 'url';
 import { logger } from '../utils/logger';
 import { getFromCache, setToCache } from '../utils/cache';
 import { cache } from '../utils/cache-factory';
+import { callGPT35 } from './openai'; // 정확한 함수명으로 import
 
 const readdir = promisify(fs.readdir);
 const readFile = promisify(fs.readFile);
@@ -243,8 +244,8 @@ export async function generateCojiResponse(message: string): Promise<string> {
 ${docsContent.length > 0 ? docsContent : "관련 문서를 찾을 수 없습니다."}`;
 
     try {
-      // 메시지 배열 형식으로 변경
-      const response = await callGpt35([
+      // 메시지 배열 형식으로 변경하고 openai.ts의 함수 사용
+      const response = await callGPT35([
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userContent }
       ]);
@@ -259,63 +260,3 @@ ${docsContent.length > 0 ? docsContent : "관련 문서를 찾을 수 없습니�
     return "서비스 연결에 문제가 있어요. 잠시 후 다시 물어봐 주세요! ⚠️";
   }
 }
-
-// 🧠 GPT-3.5 호출 함수 정의
-export const callGpt35 = async (messages: Array<{role: string, content: string}>): Promise<string> => {
-  logger.info('GPT-3.5 프롬프트 호출 시작');
-  
-  try {
-    // 캐싱을 위한 키 생성 - 모든 메시지 내용을 포함
-    const messageString = messages.map(m => `${m.role}: ${m.content}`).join('\n');
-    const cacheKey = `gpt:${messageString.substring(0, 100)}`;
-    const cachedResponse = await getFromCache(cacheKey);
-    
-    if (cachedResponse) {
-      logger.info('GPT-3.5 캐시된 응답 사용');
-      return cachedResponse;
-    }
-    
-    // OpenAI API 키 확인
-    const apiKey = process.env.OPENAI_API_KEY;
-    if (!apiKey) {
-      logger.error('OpenAI API 키가 설정되지 않았습니다.');
-      return '죄송해요, API 연결에 문제가 있어요. 잠시 후 다시 시도해주세요. 🙏';
-    }
-    
-    // API 요청 옵션
-    const apiUrl = 'https://api.openai.com/v1/chat/completions';
-    const requestBody = {
-      model: 'gpt-3.5-turbo',
-      messages: messages,
-      temperature: 0.7,
-      max_tokens: 1000
-    };
-    
-    // fetch API로 직접 호출
-    const response = await fetch(apiUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
-      },
-      body: JSON.stringify(requestBody)
-    });
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      logger.error(`GPT-3.5 API 오류: ${response.status} ${errorText}`);
-      return '죄송해요, 현재 AI 서비스에 연결할 수 없어요. 잠시 후 다시 시도해주세요. ⚠️';
-    }
-    
-    const result = await response.json();
-    const responseText = result.choices[0]?.message?.content || '';
-    
-    // 응답 캐싱 (1시간)
-    await setToCache(cacheKey, responseText, 60 * 60);
-    
-    return responseText;
-  } catch (error) {
-    logger.error('GPT-3.5 API 호출 오류:', error);
-    return '죄송해요, 응답을 생성하는 중에 문제가 발생했어요. 다시 질문해 주시겠어요? 🙇‍♀️';
-  }
-};

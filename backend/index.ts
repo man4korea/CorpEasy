@@ -1,5 +1,5 @@
 // 📁 backend/index.ts
-// Create at 2504201800 Ver1.2
+// Create at 2504211423 Ver1.3
 
 import express from 'express';
 import cors from 'cors';
@@ -30,6 +30,7 @@ import youtubeRouter from './routes/youtube-router';
 import aiRouter from './routes/ai-router';
 import openaiRouter from './routes/openai-router';
 import cojiRouter from './routes/coji-router'; // 코지 라우터
+import analyzeRouter from './routes/analyze-router'; // 콘텐츠 분석 라우터 추가
 
 // 환경변수 로드
 dotenv.config();
@@ -109,7 +110,12 @@ async function initializeServer() {
     app.use('/api/coji', cojiRouter);
     
     // =====================================================
-    // openaiRouter를 /api/gpt35 경로에도 등록 (중요: 추가된 부분)
+    // 콘텐츠 분석 라우터 등록 (중요: 추가된 부분)
+    // =====================================================
+    app.use('/api/analyze', analyzeRouter);
+    
+    // =====================================================
+    // openaiRouter를 /api/gpt35 경로에도 등록
     // =====================================================
     app.use('/api/gpt35', openaiRouter);
     
@@ -211,7 +217,8 @@ async function initializeServer() {
           gemini: true,
           grok: true,
           openai: true,
-          gpt35: true // 추가된 API
+          gpt35: true,
+          analyze: true // 분석 API 추가
         }
       });
     });

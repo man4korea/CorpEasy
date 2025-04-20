@@ -1,5 +1,5 @@
 // 📁 backend/routes/analyze-router.ts
-// Create at 2504191120
+// Create at 2504211423 Ver1.1
 
 import express from 'express';
 import { ContentAnalysisService } from '../services/contentAnalysisService';
@@ -76,6 +76,44 @@ router.post('/content', async (req, res) => {
     return res.status(500).json({
       success: false,
       message: `콘텐츠 분석 중 오류가 발생했습니다: ${(error as Error).message}`,
+    });
+  }
+});
+
+/**
+ * 콘텐츠 분석 결과 조회 엔드포인트 (추가된 부분)
+ */
+router.get('/content/:analysisId', async (req, res) => {
+  try {
+    const { analysisId } = req.params;
+    
+    if (!analysisId) {
+      return res.status(400).json({
+        success: false,
+        message: '분석 ID가 필요합니다.',
+      });
+    }
+    
+    // 분석 결과 조회
+    const analysis = await firestoreModel.getContentAnalysisById(analysisId);
+    
+    if (!analysis) {
+      return res.status(404).json({
+        success: false,
+        message: '분석 결과를 찾을 수 없습니다.',
+      });
+    }
+    
+    return res.status(200).json({
+      success: true,
+      analysis,
+    });
+  } catch (error) {
+    logger.error(`분석 결과 조회 오류 (analysisId: ${req.params.analysisId}):`, error);
+    
+    return res.status(500).json({
+      success: false,
+      message: `분석 결과 조회 중 오류가 발생했습니다: ${(error as Error).message}`,
     });
   }
 });

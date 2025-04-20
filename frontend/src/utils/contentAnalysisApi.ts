@@ -1,5 +1,5 @@
 // 📁 frontend/src/utils/contentAnalysisApi.ts
-// Create at 2504191125
+// Create at 2504211423 Ver1.1
 
 import axios from 'axios';
 
@@ -17,7 +17,8 @@ const contentAnalysisApi = {
    */
   analyzeContent: async (input: string) => {
     try {
-      const response = await axios.post(`${API_BASE_URL}/api/analyze/content`, { input });
+      // URL 경로 수정 - 중복된 'api' 제거
+      const response = await axios.post(`${API_BASE_URL}/analyze/content`, { input });
       return response.data;
     } catch (error) {
       console.error('콘텐츠 분석 API 오류:', error);
@@ -35,7 +36,8 @@ const contentAnalysisApi = {
       const formData = new FormData();
       formData.append('file', file);
 
-      const response = await axios.post(`${API_BASE_URL}/api/analyze/file`, formData, {
+      // URL 경로 수정 - 중복된 'api' 제거
+      const response = await axios.post(`${API_BASE_URL}/analyze/file`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -55,7 +57,8 @@ const contentAnalysisApi = {
    */
   getDetailedAnalysis: async (analysisId: string) => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/api/analyze/detail/${analysisId}`);
+      // URL 경로 수정 - 중복된 'api' 제거
+      const response = await axios.get(`${API_BASE_URL}/analyze/detail/${analysisId}`);
       return response.data;
     } catch (error) {
       console.error('상세 분석 API 오류:', error);
@@ -71,7 +74,8 @@ const contentAnalysisApi = {
    */
   generateBlogContent: async (analysisId: string, title: string) => {
     try {
-      const response = await axios.post(`${API_BASE_URL}/api/analyze/blog`, { analysisId, title });
+      // URL 경로 수정 - 중복된 'api' 제거
+      const response = await axios.post(`${API_BASE_URL}/analyze/blog`, { analysisId, title });
       return response.data;
     } catch (error) {
       console.error('블로그 생성 API 오류:', error);
@@ -86,7 +90,8 @@ const contentAnalysisApi = {
    */
   getAllContentAnalyses: async (limit = 10) => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/api/analyze/content-analyses?limit=${limit}`);
+      // URL 경로 수정 - 중복된 'api' 제거
+      const response = await axios.get(`${API_BASE_URL}/analyze/content-analyses?limit=${limit}`);
       return response.data;
     } catch (error) {
       console.error('콘텐츠 분석 결과 조회 API 오류:', error);
@@ -102,7 +107,8 @@ const contentAnalysisApi = {
    */
   getContentAnalysesByCategory: async (category: string, limit = 10) => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/api/analyze/content-analyses/category/${category}?limit=${limit}`);
+      // URL 경로 수정 - 중복된 'api' 제거
+      const response = await axios.get(`${API_BASE_URL}/analyze/content-analyses/category/${category}?limit=${limit}`);
       return response.data;
     } catch (error) {
       console.error('카테고리별 콘텐츠 분석 결과 조회 API 오류:', error);
@@ -117,7 +123,8 @@ const contentAnalysisApi = {
    */
   getPublishedBlogs: async (limit = 10) => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/api/analyze/blogs?limit=${limit}`);
+      // URL 경로 수정 - 중복된 'api' 제거
+      const response = await axios.get(`${API_BASE_URL}/analyze/blogs?limit=${limit}`);
       return response.data;
     } catch (error) {
       console.error('게시된 블로그 아티클 조회 API 오류:', error);
@@ -132,10 +139,27 @@ const contentAnalysisApi = {
    */
   getBlogDetail: async (blogId: string) => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/api/analyze/blog/${blogId}`);
+      // URL 경로 수정 - 중복된 'api' 제거
+      const response = await axios.get(`${API_BASE_URL}/analyze/blog/${blogId}`);
       return response.data;
     } catch (error) {
       console.error('블로그 아티클 상세 조회 API 오류:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * 분석 결과 조회
+   * @param analysisId 분석 결과 ID
+   * @returns 분석 결과 상세 정보
+   */
+  getContentAnalysisById: async (analysisId: string) => {
+    try {
+      // URL 경로 수정 - 중복된 'api' 제거
+      const response = await axios.get(`${API_BASE_URL}/analyze/content/${analysisId}`);
+      return response.data;
+    } catch (error) {
+      console.error('분석 결과 조회 API 오류:', error);
       throw error;
     }
   },

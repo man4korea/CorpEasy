@@ -1,5 +1,5 @@
 // 📁 backend/index.ts
-// Create at 2504201440 Ver1.1
+// Create at 2504201800 Ver1.2
 
 import express from 'express';
 import cors from 'cors';
@@ -55,12 +55,32 @@ async function initializeServer() {
     app.use(helmet());
     app.use(compression());
     app.use(express.json({ limit: '10mb' }));
+    
+    // CORS 설정 업데이트 - 더 많은 도메인 허용
     app.use(cors({
-      origin: process.env.CORS_ALLOWED_ORIGINS || 'http://localhost:5173',
+      origin: function(origin, callback) {
+        // 허용할 도메인 목록
+        const allowedOrigins = [
+          'http://localhost:5173',
+          'http://127.0.0.1:5173',
+          'https://corpeasy-dev.web.app',
+          process.env.CORS_ALLOWED_ORIGINS
+        ].filter(Boolean);
+        
+        // origin이 없거나 (Postman, curl 등) 허용된 도메인이면 허용
+        if (!origin || allowedOrigins.includes(origin)) {
+          callback(null, true);
+        } else {
+          logger.warn(`CORS 오류: 허용되지 않은 출처 ${origin}`);
+          callback(null, false);
+        }
+      },
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
       allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'],
       credentials: true
     }));
+    
+    // 정적 파일 서비스
     app.use(express.static('public'));
     
     // API 키 인증 미들웨어 (개발 환경에서는 패스)
@@ -76,17 +96,28 @@ async function initializeServer() {
     // 인증 라우트 설정 (클라이언트 토큰 발급)
     setupAuthRoutes(app);
     
-    // API 라우트
+    // API 라우트 등록
     app.use('/api/test', testRouter);
     app.use('/api/claude', claudeRouter);
-    app.use('/api/claude/stream', claudeStreamRouter); // 스트리밍 라우터
-    app.use('/api/claude-haiku', claudeHaikuRouter); // Haiku 라우터 추가
+    app.use('/api/claude/stream', claudeStreamRouter);
+    app.use('/api/claude-haiku', claudeHaikuRouter);
     app.use('/api/gemini', geminiRouter);
     app.use('/api/grok', grokRouter);
     app.use('/api/youtube', youtubeRouter);
     app.use('/api/ai', aiRouter);
     app.use('/api/openai', openaiRouter);
-    app.use('/api/coji', cojiRouter); // 코지 라우터
+    app.use('/api/coji', cojiRouter);
+    
+    // =====================================================
+    // openaiRouter를 /api/gpt35 경로에도 등록 (중요: 추가된 부분)
+    // =====================================================
+    app.use('/api/gpt35', openaiRouter);
+    
+    // CORS 요청 디버깅을 위한 미들웨어
+    app.use((req, res, next) => {
+      logger.debug(`요청 URL: ${req.url}, 메서드: ${req.method}, 출처: ${req.headers.origin || 'unknown'}`);
+      next();
+    });
     
     // 캐시 초기화 (안전하게 시도)
     try {
@@ -176,10 +207,11 @@ async function initializeServer() {
         },
         apis: {
           claude: true,
-          claudeHaiku: true, // Haiku API 추가
+          claudeHaiku: true,
           gemini: true,
           grok: true,
-          openai: true
+          openai: true,
+          gpt35: true // 추가된 API
         }
       });
     });

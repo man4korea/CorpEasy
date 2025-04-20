@@ -1,8 +1,19 @@
 // 📁 src/pages/GPT35.tsx
-// Create at 2504201710 Ver1.3
+// Create at 2504201740 Ver1.4
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import axios from 'axios';
+
+// API 기본 URL 설정 (환경에 따라 다르게)
+const getApiBaseUrl = () => {
+  // 개발 환경에서는 로컬 서버로
+  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    return 'http://localhost:3002';
+  }
+  // 프로덕션 환경에서는 배포된 백엔드 URL로
+  // 백엔드가 배포된 URL로 변경해야 함 (예: Firebase Functions)
+  return 'https://your-backend-url.com'; // 실제 배포된 백엔드 URL로 변경 필요
+};
 
 const GPT35 = () => {
   const [input, setInput] = useState('');
@@ -10,6 +21,14 @@ const GPT35 = () => {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [apiDebug, setApiDebug] = useState<string>('');
+  const [apiBaseUrl, setApiBaseUrl] = useState('');
+
+  // 컴포넌트 마운트 시 API 기본 URL 설정
+  useEffect(() => {
+    const baseUrl = getApiBaseUrl();
+    setApiBaseUrl(baseUrl);
+    setApiDebug(`API 기본 URL: ${baseUrl}`);
+  }, []);
 
   const clearResponses = useCallback(() => {
     setResponses([]);
@@ -21,11 +40,10 @@ const GPT35 = () => {
 
     setIsLoading(true);
     setError('');
-    setApiDebug('');
+    setApiDebug(prev => prev + '\n요청 시작...');
 
     try {
       console.log('🚀 GPT-3.5 API 요청 전송:', { input });
-      setApiDebug('요청 보내는 중...');
       
       // 요청 내용 생성
       const requestBody = {
@@ -45,8 +63,11 @@ const GPT35 = () => {
       console.log('📝 요청 상세:', JSON.stringify(requestBody, null, 2));
       setApiDebug(prev => prev + '\n요청 데이터: ' + JSON.stringify(requestBody).substring(0, 100) + '...');
       
-      // API 경로 수정: '/api/openai/gpt35' → '/api/gpt35'
-      const response = await axios.post('/api/gpt35', requestBody);
+      // 전체 URL 사용 (상대 경로 대신)
+      const apiUrl = `${apiBaseUrl}/api/gpt35`;
+      setApiDebug(prev => prev + `\n요청 URL: ${apiUrl}`);
+      
+      const response = await axios.post(apiUrl, requestBody);
       
       // 응답 로깅
       console.log('✅ GPT-3.5 API 응답 수신:', response);
@@ -110,8 +131,11 @@ const GPT35 = () => {
       setIsLoading(true);
       setApiDebug('API 상태 확인 중...');
       
-      // API 상태 확인 경로도 수정
-      const response = await axios.get('/api/gpt35/status');
+      // 전체 URL 사용
+      const statusUrl = `${apiBaseUrl}/api/gpt35/status`;
+      setApiDebug(prev => prev + `\n상태 확인 URL: ${statusUrl}`);
+      
+      const response = await axios.get(statusUrl);
       console.log('API 상태 확인 결과:', response.data);
       
       setApiDebug(prev => prev + `\nAPI 상태: ${JSON.stringify(response.data)}`);

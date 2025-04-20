@@ -1,5 +1,5 @@
 // 📁 src/pages/GPT35.tsx
-// Create at 2504201830 Ver1.5
+// Update at 2504210015 Ver1.6
 
 import React, { useState, useCallback } from 'react';
 import axios from 'axios';
@@ -29,24 +29,17 @@ const GPT35 = () => {
       
       // 요청 내용 생성
       const requestBody = {
-        messages: [
-          {
-            role: 'system',
-            content: "당신은 정확하고 사실에 입각한 답변을 제공하는 AI 어시스턴트입니다. 확실하지 않은 정보는 추측하지 말고, 모르는 것은 솔직히 모른다고 말하세요. 답변할 때는 신뢰할 수 있는 정보와 논리적 근거를 바탕으로 설명하세요."
-          },
-          { 
-            role: 'user', 
-            content: input 
-          }
-        ]
+        message: input,
+        currentPage: 'gpt35',
+        useAI: true
       };
       
       // 요청 상세 정보 로깅
       console.log('📝 요청 상세:', JSON.stringify(requestBody, null, 2));
       setApiDebug(prev => prev + '\n요청 데이터: ' + JSON.stringify(requestBody).substring(0, 100) + '...');
       
-      // 중요: 로컬 상대 경로를 사용하여 Vite 프록시 활용
-      const response = await axios.post('/api/openai/gpt35', requestBody);
+      // askCoji 함수를 사용하도록 변경
+      const response = await axios.post('/api/coji', requestBody);
       
       // 응답 로깅
       console.log('✅ GPT-3.5 API 응답 수신:', response);
@@ -57,11 +50,10 @@ const GPT35 = () => {
       if (typeof response.data === 'string') {
         responseText = response.data;
       } else if (response.data && typeof response.data === 'object') {
-        // 응답 객체에서 텍스트 데이터 추출
-        responseText = response.data.content || 
+        // askCoji 응답 형식에 맞게 조정
+        responseText = response.data.reply || 
+                       response.data.content || 
                        response.data.message || 
-                       response.data.text || 
-                       response.data.response || 
                        JSON.stringify(response.data);
       } else {
         responseText = '응답을 받지 못했습니다.';
@@ -110,16 +102,21 @@ const GPT35 = () => {
       setIsLoading(true);
       setApiDebug('API 상태 확인 중...');
       
-      // 상대 경로 사용
-      const response = await axios.get('/api/openai/status');
+      // Coji API를 사용하여 상태 확인
+      const response = await axios.post('/api/coji', {
+        message: "상태 확인",
+        currentPage: "status_check",
+        useAI: false
+      });
+      
       console.log('API 상태 확인 결과:', response.data);
       
       setApiDebug(prev => prev + `\nAPI 상태: ${JSON.stringify(response.data)}`);
       
-      if (response.data.apiKeyValid) {
-        setError(`API 키 상태: 유효함 (${response.data.keyType || '일반'} 타입)`);
+      if (response.data.status === 'success') {
+        setError(`API 상태: 정상`);
       } else {
-        setError('API 키가 유효하지 않습니다. 서버 환경 변수를 확인해주세요.');
+        setError('API 상태를 확인할 수 없습니다.');
       }
     } catch (err: any) {
       console.error('API 상태 확인 오류:', err);

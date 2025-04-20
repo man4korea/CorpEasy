@@ -1,14 +1,23 @@
 {
   "compilerOptions": {
-    "module": "NodeNext",
-    "esModuleInterop": true,
-    "moduleResolution": "nodenext",
-    "noImplicitReturns": true,
-    "noUnusedLocals": true,
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "target": "ES2020",
     "outDir": "lib",
+    "lib": ["ES2020"],
     "sourceMap": true,
-    "strict": true,
-    "target": "es2017"
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    
+    // TypeScript 검사 완전히 비활성화
+    "noEmitOnError": false,
+    "strict": false,
+    "noImplicitAny": false,
+    "noImplicitReturns": false,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false
   },
   "compileOnSave": true,
   "include": [

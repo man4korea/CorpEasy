@@ -1,4 +1,6 @@
-// 📁 vite.config.ts
+// 📁 frontend/vite.config.ts
+// Update at 2504202200 Ver1.2
+
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
@@ -46,7 +48,18 @@ export default defineConfig(({ mode }) => {
       sourcemap: mode !== 'production',
       minify: mode === 'production',
       // 청크 크기 경고 임계값 설정
-      chunkSizeWarningLimit: 1000
+      chunkSizeWarningLimit: 1000,
+      // 프로덕션 빌드 최적화
+      ...(mode === 'production' && {
+        rollupOptions: {
+          output: {
+            manualChunks: {
+              vendor: ['react', 'react-dom', 'react-router-dom']
+              // @headlessui/react와 @heroicons/react 참조 제거
+            }
+          }
+        }
+      })
     }
   };
 });

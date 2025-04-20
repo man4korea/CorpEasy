@@ -2,21 +2,14 @@
 // Create at 2504201620 Ver1.2
 
 import OpenAI from 'openai';
-import * as functions from 'firebase-functions'; // ✅ Firebase 환경 변수용
-import dotenv from 'dotenv';                     // ✅ 로컬 개발용
-import { logger } from '../utils/logger.js';     // ✅ 절대 지우면 안됨
+import dotenv from 'dotenv';
+import { logger } from '../utils/logger.js';
 
 dotenv.config();
 
-// ✅ generateGPT35Reply 함수 안, API 호출 직전
-console.log('[DEBUG] GPT 요청 시도:', prompt.slice(0, 50));
-// ✅ 4~5번째 줄 바로 아래에
-console.log('[DEBUG] 현재 OPENAI 키:', process.env.OPENAI_API_KEY || functions.config().openai?.key || '없음');
-
-
 // OpenAI SDK 클라이언트 초기화 - Project API 키(sk-proj-) 호환
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY || functions.config().openai.key,
+  apiKey: process.env.OPENAI_API_KEY,
 });
 
 /**

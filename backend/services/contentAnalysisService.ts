@@ -1,5 +1,5 @@
 // 📁 backend/services/contentAnalysisService.ts
-// Create at 2504191110
+// Create at 2504211730 Ver1.1
 
 import { logger } from '../utils/logger';
 import { Anthropic } from '@anthropic-ai/sdk';
@@ -7,6 +7,7 @@ import { YoutubeContentService } from './youtubeContentService';
 import firestoreModel, { ContentAnalysis } from '../models/firestoreModel';
 import axios from 'axios';
 import * as cheerio from 'cheerio';
+import * as fs from 'fs';
 
 /**
  * 콘텐츠 분석 서비스
@@ -26,6 +27,23 @@ export class ContentAnalysisService {
 
     if (!process.env.ANTHROPIC_API_KEY) {
       logger.warn('ANTHROPIC_API_KEY가 설정되지 않았습니다.');
+    }
+
+    // uploads 디렉토리 확인 및 생성
+    this.ensureUploadsDirectory();
+  }
+
+  /**
+   * uploads 디렉토리가 존재하는지 확인하고 없으면 생성
+   */
+  private ensureUploadsDirectory() {
+    try {
+      if (!fs.existsSync('./uploads')) {
+        fs.mkdirSync('./uploads', { recursive: true });
+        logger.info('uploads 디렉토리 생성 완료');
+      }
+    } catch (error) {
+      logger.error('uploads 디렉토리 생성 중 오류:', error);
     }
   }
 
@@ -59,12 +77,12 @@ export class ContentAnalysisService {
     return 'keyword';
   }
 
-/**
+  /**
    * 텍스트 언어 감지
    * @param text 감지할 텍스트
    * @returns 감지된 언어 코드 ('ko', 'en' 등)
    */
-private detectLanguage(text: string): string {
+  private detectLanguage(text: string): string {
     // 간단한 언어 감지 로직 (한글 vs 영어)
     // 한글 문자 비율이 10% 이상이면 한국어로 간주
     const koreanChars = text.match(/[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/g);
@@ -86,37 +104,15 @@ private detectLanguage(text: string): string {
     return 'ko';
   }
 
-/**
-   * 영어 텍스트를 한글로 번역
-   * @param text 번역할 영어 텍스트
-   * @returns 번역된 한글 텍스트
-   */
-private async translateToKorean(text: string): Promise<string> {
-    try {
-      // Claude를 사용하여 번역 (API 기반 번역 서비스 대체 가능)
-      const response = await this.anthropic.messages.create({
-        model: 'claude-3-haiku-20240307',
-        max_tokens: 4000,
-        temperature: 0.2,
-        system: '당신은 영어를 한국어로 번역하는 전문가입니다. 원문의 의미를 정확하게 전달하면서 자연스러운 한국어로 번역해주세요.',
-        messages: [
-          { role: 'user', content: `다음 영어 텍스트를 한국어로 번역해주세요. 번역만 제공하고 다른 설명은 하지 마세요:\n\n${text}` }
-        ],
-      });
-      
-      return response.content[0].text;
-    } catch (error) {
-      logger.error('번역 오류:', error);
-      throw new Error(`번역 중 오류가 발생했습니다: ${(error as Error).message}`);
-    }
-  }
-/**
+  /**
    * 영어 텍스트를 한글로 번역
    * @param text 번역할 영어 텍스트
    * @returns 번역된 한글 텍스트
    */
   private async translateToKorean(text: string): Promise<string> {
     try {
+      logger.info('영어 텍스트 번역 시작 (길이: ' + text.length + ')');
+      
       // Claude를 사용하여 번역 (API 기반 번역 서비스 대체 가능)
       const response = await this.anthropic.messages.create({
         model: 'claude-3-haiku-20240307',
@@ -124,17 +120,17 @@ private async translateToKorean(text: string): Promise<string> {
         temperature: 0.2,
         system: '당신은 영어를 한국어로 번역하는 전문가입니다. 원문의 의미를 정확하게 전달하면서 자연스러운 한국어로 번역해주세요.',
         messages: [
-          { role: 'user', content: `다음 영어 텍스트를 한국어로 번역해주세요. 번역만 제공하고 다른 설명은 하지 마세요:\n\n${text}` }
+          { role: 'user', content: `다음 영어 텍스트를 한국어로 번역해주세요. 번역만 제공하고 다른 설명은 하지 마세요:\n\n${text.substring(0, 8000)}` }
         ],
       });
       
+      logger.info('영어 텍스트 번역 완료');
       return response.content[0].text;
     } catch (error) {
       logger.error('번역 오류:', error);
       throw new Error(`번역 중 오류가 발생했습니다: ${(error as Error).message}`);
     }
   }
-
 
   /**
    * 유튜브 콘텐츠 분석
@@ -143,6 +139,8 @@ private async translateToKorean(text: string): Promise<string> {
    */
   async analyzeYoutubeContent(url: string): Promise<string> {
     try {
+      logger.info(`유튜브 콘텐츠 분석 시작: ${url}`);
+      
       // 1. 기존 분석 결과 확인
       const existingAnalysis = await firestoreModel.getContentAnalysisByUrl(url);
       if (existingAnalysis) {
@@ -151,7 +149,9 @@ private async translateToKorean(text: string): Promise<string> {
       }
       
       // 2. 유튜브 데이터 가져오기
+      logger.info(`유튜브 데이터 가져오기 시작: ${url}`);
       const { videoId, videoInfo, transcript } = await YoutubeContentService.getYoutubeContentData(url);
+      logger.info(`유튜브 데이터 가져오기 완료: ${videoId}`);
       
       if (!transcript || transcript.trim().length === 0) {
         throw new Error('유튜브 자막을 추출할 수 없습니다.');
@@ -186,13 +186,14 @@ private async translateToKorean(text: string): Promise<string> {
         logger.info(`영어 자막 번역 완료: ${videoId}`);
       }
       
-
       // 5. Claude를 사용하여 콘텐츠 분석
+      logger.info(`콘텐츠 분석 시작: ${videoId}`);
       const analysisResult = await this.generateContentSummary(
         processedTranscript,
         translatedTitle,
         translatedDescription
       );
+      logger.info(`콘텐츠 분석 완료: ${videoId}`);
       
       // 6. 분석 결과 저장
       const analysisData: Omit<ContentAnalysis, 'createdAt'> = {
@@ -209,6 +210,7 @@ private async translateToKorean(text: string): Promise<string> {
         originalLanguage: detectedLanguage, // 원본 언어 저장
       };
       
+      logger.info(`분석 결과 저장 시작: ${url}`);
       const analysisId = await firestoreModel.saveContentAnalysis(analysisData);
       logger.info(`유튜브 콘텐츠 분석 결과 저장 완료: ${analysisId}`);
       
@@ -358,21 +360,29 @@ private async translateToKorean(text: string): Promise<string> {
    * @returns 분석 결과 ID
    */
   async analyzeContent(input: string, filename?: string): Promise<string> {
-    // 콘텐츠 유형 판별
-    const contentType = this.determineContentType(input);
-    
-    // 유형별 분석 수행
-    switch (contentType) {
-      case 'youtube':
-        return this.analyzeYoutubeContent(input);
-      case 'url':
-        return this.analyzeWebContent(input);
-      case 'keyword':
-        return this.analyzeKeyword(input);
-      case 'file':
-        return this.analyzeFileContent(input, filename || '파일');
-      default:
-        throw new Error('지원하지 않는 콘텐츠 유형입니다.');
+    try {
+      logger.info(`콘텐츠 분석 요청 수신: ${input.substring(0, 50)}${input.length > 50 ? '...' : ''}`);
+      
+      // 콘텐츠 유형 판별
+      const contentType = this.determineContentType(input);
+      logger.info(`콘텐츠 유형 판별 결과: ${contentType}`);
+      
+      // 유형별 분석 수행
+      switch (contentType) {
+        case 'youtube':
+          return this.analyzeYoutubeContent(input);
+        case 'url':
+          return this.analyzeWebContent(input);
+        case 'keyword':
+          return this.analyzeKeyword(input);
+        case 'file':
+          return this.analyzeFileContent(input, filename || '파일');
+        default:
+          throw new Error('지원하지 않는 콘텐츠 유형입니다.');
+      }
+    } catch (error) {
+      logger.error(`콘텐츠 분석 오류: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw error;
     }
   }
 
@@ -447,12 +457,12 @@ JSON 형식으로 응답해주세요:
       });
       
       // 3. 응답 파싱
-      const content = response.content[0].text;
+      const responseContent = response.content[0].text;
       
       // JSON 파싱 시도
       try {
         // JSON 추출 (텍스트 내에서 JSON 찾기)
-        const jsonMatch = content.match(/\{[\s\S]*\}/);
+        const jsonMatch = responseContent.match(/\{[\s\S]*\}/);
         if (!jsonMatch) {
           throw new Error('응답에서 JSON을 찾을 수 없습니다.');
         }
@@ -477,7 +487,7 @@ JSON 형식으로 응답해주세요:
         // 기본값 반환
         return {
           category: '기타',
-          summary: `<h1>${title}</h1><p>${content.substring(0, 500)}...</p>`,
+          summary: `<h1>${title}</h1><p>${responseContent.substring(0, 500)}...</p>`,
           keywords: [title.split(' ')[0]],
           tags: [`#${title.split(' ')[0]}`],
         };
@@ -551,12 +561,12 @@ JSON 형식으로 응답해주세요:
       });
       
       // 3. 응답 파싱
-      const content = response.content[0].text;
+      const responseContent = response.content[0].text;
       
       // JSON 파싱 시도
       try {
         // JSON 추출 (텍스트 내에서 JSON 찾기)
-        const jsonMatch = content.match(/\{[\s\S]*\}/);
+        const jsonMatch = responseContent.match(/\{[\s\S]*\}/);
         if (!jsonMatch) {
           throw new Error('응답에서 JSON을 찾을 수 없습니다.');
         }
@@ -626,7 +636,7 @@ JSON 형식으로 응답해주세요:
       // 4. SEO 제목 추천 (Claude 사용)
       const seoTitles = await this.generateSeoTitles(analysis.source_title, analysis.keywords);
       
-      // 5. 상세 분석 플래그 업데이트
+      // 5. 상세 분석 플래그
       await firestoreModel.updateContentAnalysis(analysisId, {
         summaryOnly: false,
       });

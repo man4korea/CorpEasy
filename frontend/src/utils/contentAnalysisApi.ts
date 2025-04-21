@@ -1,10 +1,22 @@
 // 📁 frontend/src/utils/contentAnalysisApi.ts
-// Create at 2504211605 Ver1.4
+// Create at 2504211647 Ver1.5
 
 import axios from 'axios';
 
 // API 기본 URL 설정 (끝에 /api가 포함되지 않도록 주의)
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3002';
+
+// API URL 생성 헬퍼 함수
+function getApiUrl(path: string): string {
+  // API_BASE_URL에 이미 /api가 포함되어 있는지 확인
+  if (API_BASE_URL.includes('/api')) {
+    // /api가 포함된 경우, /api 없이 경로 반환
+    return `${API_BASE_URL}${path.startsWith('/') ? path : '/' + path}`;
+  } else {
+    // /api가 포함되지 않은 경우, /api 포함하여 경로 반환
+    return `${API_BASE_URL}/api${path.startsWith('/') ? path : '/' + path}`;
+  }
+}
 
 /**
  * 콘텐츠 분석 API 클라이언트
@@ -17,8 +29,8 @@ const contentAnalysisApi = {
    */
   analyzeContent: async (input: string) => {
     try {
-      // 경로에서 /api/ 접두사가 중복되지 않도록 수정
-      const response = await axios.post(`${API_BASE_URL}/api/analyze/content`, { input });
+      // 헬퍼 함수를 사용하여 API URL 생성
+      const response = await axios.post(getApiUrl('/analyze/content'), { input });
       return response.data;
     } catch (error) {
       console.error('콘텐츠 분석 API 오류:', error);
@@ -45,8 +57,8 @@ const contentAnalysisApi = {
       const formData = new FormData();
       formData.append('file', file);
 
-      // 경로에서 /api/ 접두사가 중복되지 않도록 수정
-      const response = await axios.post(`${API_BASE_URL}/api/analyze/file`, formData, {
+      // 헬퍼 함수를 사용하여 API URL 생성
+      const response = await axios.post(getApiUrl('/analyze/file'), formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -75,8 +87,8 @@ const contentAnalysisApi = {
    */
   analyzeYouTubeContent: async (url: string) => {
     try {
-      // 경로에서 /api/ 접두사가 중복되지 않도록 수정
-      const response = await axios.post(`${API_BASE_URL}/api/analyze/youtube`, { url });
+      // 헬퍼 함수를 사용하여 API URL 생성
+      const response = await axios.post(getApiUrl('/analyze/youtube'), { url });
       return response.data;
     } catch (error) {
       console.error('YouTube 분석 API 오류:', error);
@@ -100,8 +112,8 @@ const contentAnalysisApi = {
    */
   getDetailedAnalysis: async (analysisId: string) => {
     try {
-      // 경로에서 /api/ 접두사가 중복되지 않도록 수정
-      const response = await axios.get(`${API_BASE_URL}/api/analyze/detail/${analysisId}`);
+      // 헬퍼 함수를 사용하여 API URL 생성
+      const response = await axios.get(getApiUrl(`/analyze/detail/${analysisId}`));
       return response.data;
     } catch (error) {
       console.error('상세 분석 API 오류:', error);
@@ -126,8 +138,8 @@ const contentAnalysisApi = {
    */
   generateBlogContent: async (analysisId: string, title: string) => {
     try {
-      // 경로에서 /api/ 접두사가 중복되지 않도록 수정
-      const response = await axios.post(`${API_BASE_URL}/api/analyze/blog`, { analysisId, title });
+      // 헬퍼 함수를 사용하여 API URL 생성
+      const response = await axios.post(getApiUrl('/analyze/blog'), { analysisId, title });
       return response.data;
     } catch (error) {
       console.error('블로그 생성 API 오류:', error);
@@ -151,8 +163,8 @@ const contentAnalysisApi = {
    */
   getAllContentAnalyses: async (limit = 10) => {
     try {
-      // 경로에서 /api/ 접두사가 중복되지 않도록 수정
-      const response = await axios.get(`${API_BASE_URL}/api/analyze/content-analyses?limit=${limit}`);
+      // 헬퍼 함수를 사용하여 API URL 생성
+      const response = await axios.get(getApiUrl(`/analyze/content-analyses?limit=${limit}`));
       return response.data;
     } catch (error) {
       console.error('콘텐츠 분석 결과 조회 API 오류:', error);
@@ -168,8 +180,8 @@ const contentAnalysisApi = {
    */
   getContentAnalysesByCategory: async (category: string, limit = 10) => {
     try {
-      // 경로에서 /api/ 접두사가 중복되지 않도록 수정
-      const response = await axios.get(`${API_BASE_URL}/api/analyze/content-analyses/category/${category}?limit=${limit}`);
+      // 헬퍼 함수를 사용하여 API URL 생성
+      const response = await axios.get(getApiUrl(`/analyze/content-analyses/category/${category}?limit=${limit}`));
       return response.data;
     } catch (error) {
       console.error('카테고리별 콘텐츠 분석 결과 조회 API 오류:', error);
@@ -184,8 +196,8 @@ const contentAnalysisApi = {
    */
   getPublishedBlogs: async (limit = 10) => {
     try {
-      // 경로에서 /api/ 접두사가 중복되지 않도록 수정
-      const response = await axios.get(`${API_BASE_URL}/api/analyze/blogs?limit=${limit}`);
+      // 헬퍼 함수를 사용하여 API URL 생성
+      const response = await axios.get(getApiUrl(`/analyze/blogs?limit=${limit}`));
       return response.data;
     } catch (error) {
       console.error('게시된 블로그 아티클 조회 API 오류:', error);
@@ -200,8 +212,8 @@ const contentAnalysisApi = {
    */
   getBlogDetail: async (blogId: string) => {
     try {
-      // 경로에서 /api/ 접두사가 중복되지 않도록 수정
-      const response = await axios.get(`${API_BASE_URL}/api/analyze/blog/${blogId}`);
+      // 헬퍼 함수를 사용하여 API URL 생성
+      const response = await axios.get(getApiUrl(`/analyze/blog/${blogId}`));
       return response.data;
     } catch (error) {
       console.error('블로그 아티클 상세 조회 API 오류:', error);
@@ -216,8 +228,8 @@ const contentAnalysisApi = {
    */
   getContentAnalysisById: async (analysisId: string) => {
     try {
-      // 경로에서 /api/ 접두사가 중복되지 않도록 수정
-      const response = await axios.get(`${API_BASE_URL}/api/analyze/content/${analysisId}`);
+      // 헬퍼 함수를 사용하여 API URL 생성
+      const response = await axios.get(getApiUrl(`/analyze/content/${analysisId}`));
       return response.data;
     } catch (error) {
       console.error('분석 결과 조회 API 오류:', error);

@@ -1,0 +1,43 @@
+{
+  "version": "1.0",
+  "rules": {
+    "development_log": {
+      "name": "개발 로그 기록",
+      "description": "코드 변경이나 새로운 코드 생성 시 개발 로그 기록 규칙",
+      "path": "D:\\APP\\CorpEasy\\docs\\development-log.md",
+      "required": true,
+      "format": {
+        "date": "YYYY-MM-DD",
+        "sections": [
+          "변경 카테고리",
+          "상세 변경 내용",
+          "영향받는 파일 목록",
+          "테스트 결과 (해당되는 경우)"
+        ]
+      }
+    },
+    "code_review": {
+      "name": "코드 리뷰",
+      "description": "코드 변경 전 리뷰 프로세스",
+      "required": true,
+      "steps": [
+        "변경 사항 설명",
+        "영향도 분석",
+        "테스트 계획",
+        "리뷰어 지정"
+      ]
+    },
+    "commit_message": {
+      "name": "커밋 메시지 형식",
+      "description": "Git 커밋 메시지 작성 규칙",
+      "required": true,
+      "format": {
+        "type": ["feat", "fix", "docs", "style", "refactor", "test", "chore"],
+        "scope": "optional",
+        "subject": "required",
+        "body": "optional",
+        "footer": "optional"
+      }
+    }
+  }
+} 

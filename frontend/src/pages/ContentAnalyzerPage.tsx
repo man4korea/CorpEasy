@@ -1,10 +1,11 @@
 // 📁 frontend/src/pages/ContentAnalyzerPage.tsx
-// Create at 2504211423 Ver1.1
+// Create at 2504211515 Ver1.2
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import contentAnalysisApi from '../utils/contentAnalysisApi';
 import Layout from '../components/Layout';
+import SkeletonLoader from '../components/SkeletonLoader';
 
 /**
  * 콘텐츠 심층분석기 페이지
@@ -13,10 +14,12 @@ import Layout from '../components/Layout';
  */
 const ContentAnalyzerPage: React.FC = () => {
   const [inputValue, setInputValue] = useState('');
+  const [activeTab, setActiveTab] = useState<'url' | 'youtube' | 'text' | 'file'>('url');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
+  // 분석 처리 함수
   const handleAnalyze = async () => {
     if (!inputValue.trim()) {
       setError("분석할 콘텐츠를 입력해주세요.");
@@ -27,8 +30,19 @@ const ContentAnalyzerPage: React.FC = () => {
     setError(null);
     
     try {
-      // 실제 API 호출
-      const response = await contentAnalysisApi.analyzeContent(inputValue);
+      let response;
+      
+      // 활성 탭에 따라 다른 API 호출
+      if (activeTab === 'youtube') {
+        // YouTube URL 패턴 검증
+        if (!inputValue.includes('youtube.com') && !inputValue.includes('youtu.be')) {
+          throw new Error('유효한 YouTube URL을 입력해주세요.');
+        }
+        response = await contentAnalysisApi.analyzeYouTubeContent(inputValue);
+      } else {
+        // 일반 URL/텍스트 분석
+        response = await contentAnalysisApi.analyzeContent(inputValue);
+      }
       
       if (response.success && response.analysisId) {
         // 분석 결과 페이지로 리다이렉트
@@ -38,7 +52,7 @@ const ContentAnalyzerPage: React.FC = () => {
       }
     } catch (err: any) {
       console.error("분석 중 오류 발생:", err);
-      setError(err.response?.data?.message || "서버 연결 중 오류가 발생했습니다. 다시 시도해주세요.");
+      setError(err.response?.data?.message || err.message || "서버 연결 중 오류가 발생했습니다. 다시 시도해주세요.");
     } finally {
       setIsLoading(false);
     }
@@ -83,10 +97,18 @@ const ContentAnalyzerPage: React.FC = () => {
       }
     } catch (err: any) {
       console.error("파일 분석 중 오류 발생:", err);
-      setError(err.response?.data?.message || "서버 연결 중 오류가 발생했습니다. 다시 시도해주세요.");
+      setError(err.response?.data?.message || err.message || "서버 연결 중 오류가 발생했습니다. 다시 시도해주세요.");
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // 탭 변경 시 입력 초기화
+  const handleTabChange = (tab: 'url' | 'youtube' | 'text' | 'file') => {
+    setActiveTab(tab);
+    setInputValue('');
+    setFile(null);
+    setError(null);
   };
 
   return (
@@ -100,74 +122,127 @@ const ContentAnalyzerPage: React.FC = () => {
             <div className="border-b border-gray-200">
               <ul className="flex flex-wrap -mb-px">
                 <li className="mr-2">
-                  <a href="#url-input" className="inline-block p-4 text-blue-600 border-b-2 border-blue-600 rounded-t-lg active">URL/텍스트 입력</a>
+                  <button
+                    onClick={() => handleTabChange('url')}
+                    className={`inline-block p-4 ${
+                      activeTab === 'url' 
+                        ? 'text-blue-600 border-b-2 border-blue-600 rounded-t-lg active' 
+                        : 'text-gray-500 hover:text-gray-600 border-b-2 border-transparent rounded-t-lg'
+                    }`}
+                  >
+                    URL 분석
+                  </button>
                 </li>
                 <li className="mr-2">
-                  <a href="#file-upload" className="inline-block p-4 text-gray-500 hover:text-gray-600 border-b-2 border-transparent rounded-t-lg">파일 업로드</a>
+                  <button
+                    onClick={() => handleTabChange('youtube')}
+                    className={`inline-block p-4 ${
+                      activeTab === 'youtube' 
+                        ? 'text-blue-600 border-b-2 border-blue-600 rounded-t-lg active' 
+                        : 'text-gray-500 hover:text-gray-600 border-b-2 border-transparent rounded-t-lg'
+                    }`}
+                  >
+                    YouTube 분석
+                  </button>
+                </li>
+                <li className="mr-2">
+                  <button
+                    onClick={() => handleTabChange('text')}
+                    className={`inline-block p-4 ${
+                      activeTab === 'text' 
+                        ? 'text-blue-600 border-b-2 border-blue-600 rounded-t-lg active' 
+                        : 'text-gray-500 hover:text-gray-600 border-b-2 border-transparent rounded-t-lg'
+                    }`}
+                  >
+                    텍스트 분석
+                  </button>
+                </li>
+                <li className="mr-2">
+                  <button
+                    onClick={() => handleTabChange('file')}
+                    className={`inline-block p-4 ${
+                      activeTab === 'file' 
+                        ? 'text-blue-600 border-b-2 border-blue-600 rounded-t-lg active' 
+                        : 'text-gray-500 hover:text-gray-600 border-b-2 border-transparent rounded-t-lg'
+                    }`}
+                  >
+                    파일 분석
+                  </button>
                 </li>
               </ul>
             </div>
           </div>
           
-          {/* URL/텍스트 입력 폼 */}
-          <div id="url-input" className="mb-6">
+          {/* 입력 안내 */}
+          <div className="mb-4">
             <p className="text-gray-600 mb-2">
-              다음 중 하나를 입력하여 분석을 시작하세요:
+              {activeTab === 'url' && '웹사이트 URL을 입력하여 분석을 시작하세요.'}
+              {activeTab === 'youtube' && 'YouTube 비디오 URL을 입력하여 분석을 시작하세요.'}
+              {activeTab === 'text' && '텍스트를 직접 입력하여 분석을 시작하세요.'}
+              {activeTab === 'file' && '텍스트 파일을 업로드하여 분석을 시작하세요. (최대 10MB)'}
             </p>
-            <ul className="list-disc list-inside text-gray-600 mb-4 pl-2">
-              <li>유튜브 URL</li>
-              <li>일반 웹사이트 URL</li>
-              <li>분석하고 싶은 키워드 또는 주제</li>
-              <li>텍스트 파일 업로드 (10MB 이하)</li>
-            </ul>
-            
-            <div className="mb-4">
-              <textarea
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                placeholder="URL 또는 텍스트 입력"
-                className="w-full border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[120px]"
-              />
-            </div>
-            
-            <button
-              onClick={handleAnalyze}
-              disabled={isLoading || !inputValue.trim()}
-              className={`px-6 py-2 rounded-md font-medium ${
-                isLoading || !inputValue.trim()
-                  ? 'bg-blue-300 text-white cursor-not-allowed'
-                  : 'bg-blue-500 text-white hover:bg-blue-600'
-              }`}
-            >
-              {isLoading ? '분석중...' : '분석하기'}
-            </button>
           </div>
           
-          {/* 파일 업로드 폼 */}
-          <div id="file-upload" className="mb-6">
-            <p className="text-gray-600 mb-4">텍스트 파일을 업로드하여 분석할 수 있습니다. (최대 10MB)</p>
-            
+          {/* URL/텍스트/YouTube 입력 폼 */}
+          {(activeTab === 'url' || activeTab === 'youtube' || activeTab === 'text') && (
             <div className="mb-4">
-              <input
-                type="file"
-                onChange={handleFileChange}
-                accept=".txt,.doc,.docx,.pdf"
-                className="block w-full text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-              />
+              {activeTab === 'text' ? (
+                <textarea
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  placeholder={activeTab === 'text' ? "분석할 텍스트를 입력하세요..." : (activeTab === 'youtube' ? "YouTube URL을 입력하세요..." : "URL을 입력하세요...")}
+                  className="w-full border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[120px]"
+                />
+              ) : (
+                <input
+                  type="text"
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  placeholder={activeTab === 'youtube' ? "YouTube URL을 입력하세요..." : "URL을 입력하세요..."}
+                  className="w-full border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              )}
+              
+              <button
+                onClick={handleAnalyze}
+                disabled={isLoading || !inputValue.trim()}
+                className={`mt-4 px-6 py-2 rounded-md font-medium ${
+                  isLoading || !inputValue.trim()
+                    ? 'bg-blue-300 text-white cursor-not-allowed'
+                    : 'bg-blue-500 text-white hover:bg-blue-600'
+                }`}
+              >
+                {isLoading ? '분석중...' : '분석하기'}
+              </button>
             </div>
-            
-            <button
-              onClick={handleFileUpload}
-              disabled={isLoading || !file}
-              className={`px-6 py-2 rounded-md font-medium ${
-                isLoading || !file
-                  ? 'bg-blue-300 text-white cursor-not-allowed'
-                  : 'bg-blue-500 text-white hover:bg-blue-600'
-              }`}
-            >
-              {isLoading ? '분석중...' : '파일 분석하기'}
-            </button>
-          </div>
+          )}
+          
+          {/* 파일 업로드 폼 */}
+          {activeTab === 'file' && (
+            <div className="mb-4">
+              <div className="mb-4">
+                <input
+                  type="file"
+                  onChange={handleFileChange}
+                  accept=".txt,.doc,.docx,.pdf,.md"
+                  className="block w-full text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                />
+                <p className="mt-1 text-sm text-gray-500">지원 형식: TXT, DOC, DOCX, PDF, MD (최대 10MB)</p>
+              </div>
+              
+              <button
+                onClick={handleFileUpload}
+                disabled={isLoading || !file}
+                className={`px-6 py-2 rounded-md font-medium ${
+                  isLoading || !file
+                    ? 'bg-blue-300 text-white cursor-not-allowed'
+                    : 'bg-blue-500 text-white hover:bg-blue-600'
+                }`}
+              >
+                {isLoading ? '분석중...' : '파일 분석하기'}
+              </button>
+            </div>
+          )}
           
           {/* 오류 메시지 */}
           {error && (

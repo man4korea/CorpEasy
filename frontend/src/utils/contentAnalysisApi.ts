@@ -1,5 +1,5 @@
 // 📁 frontend/src/utils/contentAnalysisApi.ts
-// Create at 2504211423 Ver1.1
+// Create at 2504211515 Ver1.2
 
 import axios from 'axios';
 
@@ -17,8 +17,8 @@ const contentAnalysisApi = {
    */
   analyzeContent: async (input: string) => {
     try {
-      // URL 경로 수정 - 중복된 'api' 제거
-      const response = await axios.post(`${API_BASE_URL}/analyze/content`, { input });
+      // 수정된 API 경로 - /api/ 접두사 추가
+      const response = await axios.post(`${API_BASE_URL}/api/analyze/content`, { input });
       return response.data;
     } catch (error) {
       console.error('콘텐츠 분석 API 오류:', error);
@@ -36,8 +36,8 @@ const contentAnalysisApi = {
       const formData = new FormData();
       formData.append('file', file);
 
-      // URL 경로 수정 - 중복된 'api' 제거
-      const response = await axios.post(`${API_BASE_URL}/analyze/file`, formData, {
+      // 수정된 API 경로 - /api/ 접두사 추가
+      const response = await axios.post(`${API_BASE_URL}/api/analyze/file`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -57,8 +57,8 @@ const contentAnalysisApi = {
    */
   getDetailedAnalysis: async (analysisId: string) => {
     try {
-      // URL 경로 수정 - 중복된 'api' 제거
-      const response = await axios.get(`${API_BASE_URL}/analyze/detail/${analysisId}`);
+      // 수정된 API 경로 - /api/ 접두사 추가
+      const response = await axios.get(`${API_BASE_URL}/api/analyze/detail/${analysisId}`);
       return response.data;
     } catch (error) {
       console.error('상세 분석 API 오류:', error);
@@ -74,8 +74,8 @@ const contentAnalysisApi = {
    */
   generateBlogContent: async (analysisId: string, title: string) => {
     try {
-      // URL 경로 수정 - 중복된 'api' 제거
-      const response = await axios.post(`${API_BASE_URL}/analyze/blog`, { analysisId, title });
+      // 수정된 API 경로 - /api/ 접두사 추가
+      const response = await axios.post(`${API_BASE_URL}/api/analyze/blog`, { analysisId, title });
       return response.data;
     } catch (error) {
       console.error('블로그 생성 API 오류:', error);
@@ -90,8 +90,8 @@ const contentAnalysisApi = {
    */
   getAllContentAnalyses: async (limit = 10) => {
     try {
-      // URL 경로 수정 - 중복된 'api' 제거
-      const response = await axios.get(`${API_BASE_URL}/analyze/content-analyses?limit=${limit}`);
+      // 수정된 API 경로 - /api/ 접두사 추가
+      const response = await axios.get(`${API_BASE_URL}/api/analyze/content-analyses?limit=${limit}`);
       return response.data;
     } catch (error) {
       console.error('콘텐츠 분석 결과 조회 API 오류:', error);
@@ -107,8 +107,8 @@ const contentAnalysisApi = {
    */
   getContentAnalysesByCategory: async (category: string, limit = 10) => {
     try {
-      // URL 경로 수정 - 중복된 'api' 제거
-      const response = await axios.get(`${API_BASE_URL}/analyze/content-analyses/category/${category}?limit=${limit}`);
+      // 수정된 API 경로 - /api/ 접두사 추가
+      const response = await axios.get(`${API_BASE_URL}/api/analyze/content-analyses/category/${category}?limit=${limit}`);
       return response.data;
     } catch (error) {
       console.error('카테고리별 콘텐츠 분석 결과 조회 API 오류:', error);
@@ -123,8 +123,8 @@ const contentAnalysisApi = {
    */
   getPublishedBlogs: async (limit = 10) => {
     try {
-      // URL 경로 수정 - 중복된 'api' 제거
-      const response = await axios.get(`${API_BASE_URL}/analyze/blogs?limit=${limit}`);
+      // 수정된 API 경로 - /api/ 접두사 추가
+      const response = await axios.get(`${API_BASE_URL}/api/analyze/blogs?limit=${limit}`);
       return response.data;
     } catch (error) {
       console.error('게시된 블로그 아티클 조회 API 오류:', error);
@@ -139,8 +139,8 @@ const contentAnalysisApi = {
    */
   getBlogDetail: async (blogId: string) => {
     try {
-      // URL 경로 수정 - 중복된 'api' 제거
-      const response = await axios.get(`${API_BASE_URL}/analyze/blog/${blogId}`);
+      // 수정된 API 경로 - /api/ 접두사 추가
+      const response = await axios.get(`${API_BASE_URL}/api/analyze/blog/${blogId}`);
       return response.data;
     } catch (error) {
       console.error('블로그 아티클 상세 조회 API 오류:', error);
@@ -155,14 +155,30 @@ const contentAnalysisApi = {
    */
   getContentAnalysisById: async (analysisId: string) => {
     try {
-      // URL 경로 수정 - 중복된 'api' 제거
-      const response = await axios.get(`${API_BASE_URL}/analyze/content/${analysisId}`);
+      // 수정된 API 경로 - /api/ 접두사 추가
+      const response = await axios.get(`${API_BASE_URL}/api/analyze/content/${analysisId}`);
       return response.data;
     } catch (error) {
       console.error('분석 결과 조회 API 오류:', error);
       throw error;
     }
   },
+
+  /**
+   * YouTube 콘텐츠 분석
+   * @param url YouTube URL
+   * @returns 분석 결과
+   */
+  analyzeYouTubeContent: async (url: string) => {
+    try {
+      // YouTube 분석용 API 엔드포인트
+      const response = await axios.post(`${API_BASE_URL}/api/analyze/youtube`, { url });
+      return response.data;
+    } catch (error) {
+      console.error('YouTube 분석 API 오류:', error);
+      throw error;
+    }
+  }
 };
 
 export default contentAnalysisApi;

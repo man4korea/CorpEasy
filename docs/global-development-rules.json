@@ -1,0 +1,46 @@
+{
+  "name": "Global Development Rules",
+  "scope": "universal",
+  "rules": {
+    "permissions": {
+      "file_modification": {
+        "rule": "사용자의 명시적인 확인 없이는 파일을 삭제하거나 수정할 수 없음",
+        "priority": 1,
+        "description": "모든 프로젝트에서 모든 파일 수정 및 삭제 작업은 반드시 사용자의 확인을 받아야 함",
+        "scope": "universal",
+        "enforcement": "strict"
+      },
+      "modification_scope": {
+        "rule": "지시된 파일만 수정하며, 추가 파일 수정/생성 시 반드시 승인을 받아야 함",
+        "priority": 2,
+        "description": "1. 사용자가 직접 지시한 파일만 수정 가능\n2. 다른 파일 수정/생성이 필요한 경우:\n   - 파일명과 수정/생성 이유를 명시\n   - 사용자의 명시적인 승인 필요\n   - 승인 후에만 수정/생성 가능",
+        "scope": "universal",
+        "enforcement": "strict"
+      },
+      "file_header": {
+        "rule": "모든 파일(JSON 제외)의 상단에 표준 헤더 형식 적용",
+        "priority": 3,
+        "description": "1. 적용 대상: JSON 파일을 제외한 모든 파일 (MD 파일 포함)\n2. 헤더 형식:\n   // 📁 [폴더경로]/[파일명]\n   // Create at YYMMDDhhmm Version\n   //\n3. 시간 기준: 동경시각 (JST)\n4. 버전 관리:\n   - 초기 생성 시: Ver1.0\n   - 수정 시: 버전 번호 증가 (예: Ver1.1, Ver1.2)\n5. 날짜/시간 형식:\n   - YY: 연도(2자리)\n   - MM: 월(2자리)\n   - DD: 일(2자리)\n   - hh: 시간(24시간제, 2자리)\n   - mm: 분(2자리)",
+        "scope": "universal",
+        "enforcement": "strict",
+        "example": "// 📁 src/controllers/UserController.ts\n// Create at 2304191423 Ver1.0\n//"
+      },
+      "ui_ux_consistency": {
+        "rule": "모든 페이지 생성 및 수정 시 UI/UX 가이드라인 준수",
+        "priority": 4,
+        "description": "1. 기준 문서: D:\\APP\\CorpEasy\\docs\\CorpEasy_UI_UX_Guideline.md\n2. 적용 범위:\n   - 모든 페이지 생성\n   - 모든 페이지 수정\n3. 준수 사항:\n   - 디자인 시스템\n   - 컴포넌트 사용 규칙\n   - 레이아웃 가이드라인\n   - 상호작용 패턴\n   - 접근성 표준",
+        "scope": "universal",
+        "enforcement": "strict",
+        "verification": "모든 UI 변경은 가이드라인 문서와의 일관성 검증 필요"
+      },
+      "development_logging": {
+        "rule": "매일 수정/생성된 파일의 변경사항을 개발 로그에 기록",
+        "priority": 5,
+        "description": "1. 로그 파일: D:\\APP\\CorpEasy\\docs\\development-log.md\n2. 기록 내용:\n   - 모든 코드 변경 사항 및 새로운 코드 생성\n   - 변경 날짜 (YYYY-MM-DD)\n   - 변경 카테고리 (신규 기능, 버그 수정, 성능 개선 등)\n   - 상세 변경 내용\n   - 영향받는 파일 목록\n   - 변경 사유 및 주요 로직 변경 사항\n   - 테스트 결과 (해당되는 경우)\n3. 로그 위치:\n   - 최신 변경 사항을 항상 파일 상단에 추가\n4. 점검 주기:\n   - 매일 수정/생성된 파일 확인\n   - 변경사항 즉시 기록",
+        "scope": "universal",
+        "enforcement": "strict",
+        "verification": "매일 개발 로그의 완성도와 정확성 검증 필요"
+      }
+    }
+  }
+} 

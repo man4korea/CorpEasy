@@ -1,5 +1,5 @@
 // 📁 backend/routes/analyze-router.ts
-// Create at 2504211607 Ver1.2
+// Create at 2504211710 Ver1.3
 
 import express from 'express';
 import { ContentAnalysisService } from '../services/contentAnalysisService';
@@ -11,6 +11,7 @@ import { promisify } from 'util';
 import * as fs from 'fs';
 import { YoutubeContentService } from '../services/youtubeContentService';
 import axios from 'axios';
+import firestoreModel from '../models/firestoreModel';  // 임포트 위치 수정 - 파일 상단으로 이동
 
 const readFileAsync = promisify(fs.readFile);
 const router = express.Router();
@@ -33,6 +34,16 @@ const upload = multer({
 // Services 초기화
 const contentAnalysisService = new ContentAnalysisService();
 const blogGenerationService = new BlogGenerationService();
+
+// 업로드 디렉토리 생성 확인
+try {
+  if (!fs.existsSync('./uploads')) {
+    fs.mkdirSync('./uploads', { recursive: true });
+    logger.info('uploads 디렉토리 생성 완료');
+  }
+} catch (error) {
+  logger.error('uploads 디렉토리 생성 중 오류:', error);
+}
 
 // 응답 시간 로깅 미들웨어
 router.use((req, res, next) => {
@@ -60,6 +71,8 @@ router.post('/content', async (req, res) => {
         message: '분석할 콘텐츠가 없습니다.',
       });
     }
+    
+    logger.info(`콘텐츠 분석 요청 수신: ${input.substring(0, 50)}...`);
     
     // 콘텐츠 분석 수행
     const analysisId = await contentAnalysisService.analyzeContent(input);
@@ -178,6 +191,8 @@ router.post('/file', upload.single('file'), async (req, res) => {
         message: '파일이 업로드되지 않았습니다.',
       });
     }
+    
+    logger.info(`파일 업로드 분석 요청: ${req.file.originalname}, 크기: ${req.file.size} bytes`);
     
     // 파일 읽기
     const fileContent = await readFileAsync(req.file.path, 'utf8');
@@ -407,7 +422,5 @@ router.get('/blog/:blogId', async (req, res) => {
     });
   }
 });
-
-import firestoreModel from '../models/firestoreModel';
 
 export default router;

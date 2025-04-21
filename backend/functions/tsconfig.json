@@ -1,23 +1,17 @@
 {
   "compilerOptions": {
-    "module": "CommonJS",
-    "moduleResolution": "Node",
-    "target": "ES2020",
+    "module": "commonjs",
+    "noImplicitReturns": true,
+    "noUnusedLocals": true,
     "outDir": "lib",
-    "lib": ["ES2020"],
     "sourceMap": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "resolveJsonModule": true,
+    "strict": true,
+    "target": "es2017",
+    "allowJs": true,
     "esModuleInterop": true,
-    
-    // TypeScript 검사 완전히 비활성화
-    "noEmitOnError": false,
-    "strict": false,
-    "noImplicitAny": false,
-    "noImplicitReturns": false,
-    "noUnusedLocals": false,
-    "noUnusedParameters": false
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "typeRoots": ["node_modules/@types"]
   },
   "compileOnSave": true,
   "include": [

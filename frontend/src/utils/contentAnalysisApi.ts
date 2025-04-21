@@ -1,9 +1,9 @@
 // 📁 frontend/src/utils/contentAnalysisApi.ts
-// Create at 2504211515 Ver1.2
+// Create at 2504211605 Ver1.4
 
 import axios from 'axios';
 
-// API 기본 URL 설정
+// API 기본 URL 설정 (끝에 /api가 포함되지 않도록 주의)
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3002';
 
 /**
@@ -17,12 +17,21 @@ const contentAnalysisApi = {
    */
   analyzeContent: async (input: string) => {
     try {
-      // 수정된 API 경로 - /api/ 접두사 추가
+      // 경로에서 /api/ 접두사가 중복되지 않도록 수정
       const response = await axios.post(`${API_BASE_URL}/api/analyze/content`, { input });
       return response.data;
     } catch (error) {
       console.error('콘텐츠 분석 API 오류:', error);
-      throw error;
+      if (axios.isAxiosError(error) && error.response) {
+        return {
+          success: false,
+          message: error.response.data.message || '콘텐츠 분석 중 오류가 발생했습니다.'
+        };
+      }
+      return {
+        success: false,
+        message: '서버 연결 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.'
+      };
     }
   },
 
@@ -36,7 +45,7 @@ const contentAnalysisApi = {
       const formData = new FormData();
       formData.append('file', file);
 
-      // 수정된 API 경로 - /api/ 접두사 추가
+      // 경로에서 /api/ 접두사가 중복되지 않도록 수정
       const response = await axios.post(`${API_BASE_URL}/api/analyze/file`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
@@ -46,7 +55,41 @@ const contentAnalysisApi = {
       return response.data;
     } catch (error) {
       console.error('파일 분석 API 오류:', error);
-      throw error;
+      if (axios.isAxiosError(error) && error.response) {
+        return {
+          success: false,
+          message: error.response.data.message || '파일 분석 중 오류가 발생했습니다.'
+        };
+      }
+      return {
+        success: false,
+        message: '서버 연결 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.'
+      };
+    }
+  },
+
+  /**
+   * YouTube 콘텐츠 분석
+   * @param url YouTube URL
+   * @returns 분석 결과
+   */
+  analyzeYouTubeContent: async (url: string) => {
+    try {
+      // 경로에서 /api/ 접두사가 중복되지 않도록 수정
+      const response = await axios.post(`${API_BASE_URL}/api/analyze/youtube`, { url });
+      return response.data;
+    } catch (error) {
+      console.error('YouTube 분석 API 오류:', error);
+      if (axios.isAxiosError(error) && error.response) {
+        return {
+          success: false,
+          message: error.response.data.message || 'YouTube 분석 중 오류가 발생했습니다.'
+        };
+      }
+      return {
+        success: false,
+        message: '서버 연결 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.'
+      };
     }
   },
 
@@ -57,12 +100,21 @@ const contentAnalysisApi = {
    */
   getDetailedAnalysis: async (analysisId: string) => {
     try {
-      // 수정된 API 경로 - /api/ 접두사 추가
+      // 경로에서 /api/ 접두사가 중복되지 않도록 수정
       const response = await axios.get(`${API_BASE_URL}/api/analyze/detail/${analysisId}`);
       return response.data;
     } catch (error) {
       console.error('상세 분석 API 오류:', error);
-      throw error;
+      if (axios.isAxiosError(error) && error.response) {
+        return {
+          success: false,
+          message: error.response.data.message || '상세 분석 중 오류가 발생했습니다.'
+        };
+      }
+      return {
+        success: false,
+        message: '서버 연결 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.'
+      };
     }
   },
 
@@ -74,12 +126,21 @@ const contentAnalysisApi = {
    */
   generateBlogContent: async (analysisId: string, title: string) => {
     try {
-      // 수정된 API 경로 - /api/ 접두사 추가
+      // 경로에서 /api/ 접두사가 중복되지 않도록 수정
       const response = await axios.post(`${API_BASE_URL}/api/analyze/blog`, { analysisId, title });
       return response.data;
     } catch (error) {
       console.error('블로그 생성 API 오류:', error);
-      throw error;
+      if (axios.isAxiosError(error) && error.response) {
+        return {
+          success: false,
+          message: error.response.data.message || '블로그 생성 중 오류가 발생했습니다.'
+        };
+      }
+      return {
+        success: false,
+        message: '서버 연결 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.'
+      };
     }
   },
 
@@ -90,7 +151,7 @@ const contentAnalysisApi = {
    */
   getAllContentAnalyses: async (limit = 10) => {
     try {
-      // 수정된 API 경로 - /api/ 접두사 추가
+      // 경로에서 /api/ 접두사가 중복되지 않도록 수정
       const response = await axios.get(`${API_BASE_URL}/api/analyze/content-analyses?limit=${limit}`);
       return response.data;
     } catch (error) {
@@ -107,7 +168,7 @@ const contentAnalysisApi = {
    */
   getContentAnalysesByCategory: async (category: string, limit = 10) => {
     try {
-      // 수정된 API 경로 - /api/ 접두사 추가
+      // 경로에서 /api/ 접두사가 중복되지 않도록 수정
       const response = await axios.get(`${API_BASE_URL}/api/analyze/content-analyses/category/${category}?limit=${limit}`);
       return response.data;
     } catch (error) {
@@ -123,7 +184,7 @@ const contentAnalysisApi = {
    */
   getPublishedBlogs: async (limit = 10) => {
     try {
-      // 수정된 API 경로 - /api/ 접두사 추가
+      // 경로에서 /api/ 접두사가 중복되지 않도록 수정
       const response = await axios.get(`${API_BASE_URL}/api/analyze/blogs?limit=${limit}`);
       return response.data;
     } catch (error) {
@@ -139,7 +200,7 @@ const contentAnalysisApi = {
    */
   getBlogDetail: async (blogId: string) => {
     try {
-      // 수정된 API 경로 - /api/ 접두사 추가
+      // 경로에서 /api/ 접두사가 중복되지 않도록 수정
       const response = await axios.get(`${API_BASE_URL}/api/analyze/blog/${blogId}`);
       return response.data;
     } catch (error) {
@@ -155,7 +216,7 @@ const contentAnalysisApi = {
    */
   getContentAnalysisById: async (analysisId: string) => {
     try {
-      // 수정된 API 경로 - /api/ 접두사 추가
+      // 경로에서 /api/ 접두사가 중복되지 않도록 수정
       const response = await axios.get(`${API_BASE_URL}/api/analyze/content/${analysisId}`);
       return response.data;
     } catch (error) {
@@ -163,22 +224,6 @@ const contentAnalysisApi = {
       throw error;
     }
   },
-
-  /**
-   * YouTube 콘텐츠 분석
-   * @param url YouTube URL
-   * @returns 분석 결과
-   */
-  analyzeYouTubeContent: async (url: string) => {
-    try {
-      // YouTube 분석용 API 엔드포인트
-      const response = await axios.post(`${API_BASE_URL}/api/analyze/youtube`, { url });
-      return response.data;
-    } catch (error) {
-      console.error('YouTube 분석 API 오류:', error);
-      throw error;
-    }
-  }
 };
 
 export default contentAnalysisApi;

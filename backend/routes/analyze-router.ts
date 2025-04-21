@@ -1,5 +1,5 @@
 // 📁 backend/routes/analyze-router.ts
-// Create at 2504211423 Ver1.1
+// Create at 2504211607 Ver1.2
 
 import express from 'express';
 import { ContentAnalysisService } from '../services/contentAnalysisService';
@@ -9,6 +9,8 @@ import multer from 'multer';
 import { createReadStream } from 'fs';
 import { promisify } from 'util';
 import * as fs from 'fs';
+import { YoutubeContentService } from '../services/youtubeContentService';
+import axios from 'axios';
 
 const readFileAsync = promisify(fs.readFile);
 const router = express.Router();
@@ -76,6 +78,52 @@ router.post('/content', async (req, res) => {
     return res.status(500).json({
       success: false,
       message: `콘텐츠 분석 중 오류가 발생했습니다: ${(error as Error).message}`,
+    });
+  }
+});
+
+/**
+ * YouTube 비디오 분석 엔드포인트 (추가된 부분)
+ * YouTube URL을 분석하여 결과 반환
+ */
+router.post('/youtube', async (req, res) => {
+  try {
+    const { url } = req.body;
+    
+    if (!url) {
+      return res.status(400).json({
+        success: false,
+        message: 'YouTube URL이 필요합니다.',
+      });
+    }
+    
+    // YouTube URL 검증
+    if (!url.includes('youtube.com') && !url.includes('youtu.be')) {
+      return res.status(400).json({
+        success: false,
+        message: '유효한 YouTube URL이 아닙니다.',
+      });
+    }
+    
+    logger.info(`YouTube 콘텐츠 분석 요청: ${url}`);
+    
+    // YouTube 콘텐츠 분석 수행
+    const analysisId = await contentAnalysisService.analyzeYoutubeContent(url);
+    
+    // 분석 결과 조회
+    const analysis = await firestoreModel.getContentAnalysisById(analysisId);
+    
+    return res.status(200).json({
+      success: true,
+      analysisId,
+      analysis,
+    });
+  } catch (error) {
+    logger.error('YouTube 분석 오류:', error);
+    
+    return res.status(500).json({
+      success: false,
+      message: `YouTube 분석 중 오류가 발생했습니다: ${(error as Error).message}`,
     });
   }
 });

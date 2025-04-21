@@ -8,12 +8,20 @@
     ],
     "rewrites": [
       {
+        "source": "/api/analyze/**",
+        "function": "api"
+      },
+      {
         "source": "/api/coji/**",
         "function": "askCoji"
       },
       {
         "source": "/api/conversation/**",
         "function": "getConversationHistory"
+      },
+      {
+        "source": "/api/**",
+        "function": "api"
       },
       {
         "source": "**",

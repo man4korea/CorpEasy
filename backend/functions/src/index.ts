@@ -1,5 +1,5 @@
 // 📁 backend/functions/src/index.ts
-// Create at 2504221652 Ver2.0
+// Create at 2504221740 Ver2.1
 
 import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
@@ -35,8 +35,13 @@ app.use((req, res, next) => {
   next();
 });
 
-// 간단한 인증 미들웨어 (필요에 따라 활성화)
+// 간단한 인증 미들웨어 (항상 통과하도록 수정)
 const authMiddleware = (req: express.Request, res: express.Response, next: express.NextFunction) => {
+  // 항상 인증 통과 (개발 및 테스트용)
+  return next();
+  
+  // 아래 인증 로직은 나중에 활성화할 수 있습니다
+  /*
   // 개발 환경에서는 인증 건너뛰기
   if (process.env.NODE_ENV !== 'production') {
     return next();
@@ -52,6 +57,7 @@ const authMiddleware = (req: express.Request, res: express.Response, next: expre
   // const token = authHeader.split('Bearer ')[1];
   
   next();
+  */
 };
 
 // 기본 라우트

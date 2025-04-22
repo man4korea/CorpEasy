@@ -11,6 +11,8 @@ import ContentAnalysisPage from './pages/ContentAnalysisPage';
 import BlogDetailPage from './pages/BlogDetailPage';
 import Dashboard from './pages/Dashboard';
 import { Coji } from './pages/Coji';
+import ContentAnalyzerPage from './pages/ContentAnalyzerPage';
+
 
 // API 테스트 페이지 import
 import GPT35 from './pages/GPT35';
@@ -92,6 +94,7 @@ const App: React.FC = () => {
           {/* 콘텐츠 상세분석기 */}
           <Route path="analyze" element={<AnalyzeInputPage />} />
           <Route path="content-analyzer" element={<AnalyzeInputPage />} />
+          <Route path="content-analyzer" element={<ContentAnalyzerPage />} />
           <Route path="content-analysis/:id" element={<ContentAnalysisPage />} />
           
           {/* 지식정보창고 */}

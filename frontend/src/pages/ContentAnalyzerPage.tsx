@@ -1,11 +1,12 @@
 // 📁 frontend/src/pages/ContentAnalyzerPage.tsx
-// Create at 2504211515 Ver1.2
+// Create at 2504221920 Ver2.0
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import contentAnalysisApi from '../utils/contentAnalysisApi';
 import Layout from '../components/Layout';
 import SkeletonLoader from '../components/SkeletonLoader';
+import axios from 'axios';
 
 /**
  * 콘텐츠 심층분석기 페이지
@@ -14,16 +15,53 @@ import SkeletonLoader from '../components/SkeletonLoader';
  */
 const ContentAnalyzerPage: React.FC = () => {
   const [inputValue, setInputValue] = useState('');
-  const [activeTab, setActiveTab] = useState<'url' | 'youtube' | 'text' | 'file'>('url');
+  const [activeTab, setActiveTab] = useState<'url' | 'youtube' | 'text' | 'file'>('youtube'); // 기본값을 'youtube'로 변경
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
+  
+  // YouTube 자막을 위한 상태 추가
+  const [transcript, setTranscript] = useState<string | null>(null);
+  const [showTranscript, setShowTranscript] = useState(false);
+
+  // YouTube 자막 가져오기 함수
+  const fetchYouTubeTranscript = async (url: string) => {
+    setIsLoading(true);
+    setError(null);
+    setTranscript(null);
+    
+    try {
+      // API 기본 URL 가져오기
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3002';
+      
+      // YouTube 자막 API 호출
+      const response = await axios.post(`${API_BASE_URL}/api/analyze/youtube-transcript`, { url });
+      
+      if (response.data.success && response.data.transcript) {
+        setTranscript(response.data.transcript);
+        setShowTranscript(true);
+      } else {
+        setError(response.data.message || "자막을 가져오는 중 오류가 발생했습니다.");
+      }
+    } catch (err: any) {
+      console.error("YouTube 자막 가져오기 오류:", err);
+      setError(err.response?.data?.message || err.message || "자막을 가져오는 중 오류가 발생했습니다.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // 분석 처리 함수
   const handleAnalyze = async () => {
     if (!inputValue.trim()) {
       setError("분석할 콘텐츠를 입력해주세요.");
       return;
+    }
+    
+    // YouTube 탭이 활성화되어 있고 자막 가져오기가 요청된 경우
+    if (activeTab === 'youtube') {
+      await fetchYouTubeTranscript(inputValue);
+      return; // 여기서 함수 종료 (자막만 가져오기 위해)
     }
     
     setIsLoading(true);
@@ -109,6 +147,8 @@ const ContentAnalyzerPage: React.FC = () => {
     setInputValue('');
     setFile(null);
     setError(null);
+    setTranscript(null);
+    setShowTranscript(false);
   };
 
   return (
@@ -177,7 +217,7 @@ const ContentAnalyzerPage: React.FC = () => {
           <div className="mb-4">
             <p className="text-gray-600 mb-2">
               {activeTab === 'url' && '웹사이트 URL을 입력하여 분석을 시작하세요.'}
-              {activeTab === 'youtube' && 'YouTube 비디오 URL을 입력하여 분석을 시작하세요.'}
+              {activeTab === 'youtube' && 'YouTube 비디오 URL을 입력하여 자막을 가져오세요.'}
               {activeTab === 'text' && '텍스트를 직접 입력하여 분석을 시작하세요.'}
               {activeTab === 'file' && '텍스트 파일을 업로드하여 분석을 시작하세요. (최대 10MB)'}
             </p>
@@ -212,7 +252,7 @@ const ContentAnalyzerPage: React.FC = () => {
                     : 'bg-blue-500 text-white hover:bg-blue-600'
                 }`}
               >
-                {isLoading ? '분석중...' : '분석하기'}
+                {isLoading ? '처리중...' : (activeTab === 'youtube' ? '자막 가져오기' : '분석하기')}
               </button>
             </div>
           )}
@@ -244,6 +284,36 @@ const ContentAnalyzerPage: React.FC = () => {
             </div>
           )}
           
+          {/* YouTube 자막 표시 */}
+          {showTranscript && transcript && (
+            <div className="mt-6 bg-white rounded-lg shadow-md p-6">
+              <h2 className="text-xl font-semibold mb-4">YouTube 자막</h2>
+              <div className="whitespace-pre-wrap bg-gray-50 p-4 rounded border border-gray-200 max-h-96 overflow-y-auto">
+                {transcript}
+              </div>
+              <div className="mt-4 flex justify-between">
+                <button
+                  onClick={() => setShowTranscript(false)}
+                  className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-100"
+                >
+                  닫기
+                </button>
+                <button
+                  onClick={() => {
+                    // 이 버튼을 눌렀을 때 추가 분석 단계로 진행할 수 있습니다
+                    // 예: analyzeYouTubeContent API 호출 등
+                    setTranscript(null);
+                    setShowTranscript(false);
+                    // 분석 로직 추가 (나중에 구현)
+                  }}
+                  className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+                >
+                  자막으로 분석하기
+                </button>
+              </div>
+            </div>
+          )}
+          
           {/* 오류 메시지 */}
           {error && (
             <div className="p-4 bg-red-50 text-red-700 rounded-md mb-4">
@@ -255,7 +325,7 @@ const ContentAnalyzerPage: React.FC = () => {
           {isLoading && (
             <div className="bg-gray-50 rounded-md p-8 flex flex-col items-center justify-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mb-4"></div>
-              <p className="text-gray-600">분석 중입니다. 잠시만 기다려주세요...</p>
+              <p className="text-gray-600">처리 중입니다. 잠시만 기다려주세요...</p>
               <p className="text-gray-500 text-sm mt-2">콘텐츠 길이에 따라 최대 1분 정도 소요될 수 있습니다.</p>
             </div>
           )}

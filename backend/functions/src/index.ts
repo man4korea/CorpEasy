@@ -1,5 +1,5 @@
 // 📁 backend/functions/src/index.ts
-// Create at 2504221810 Ver2.2
+// Create at 2504221915 Ver2.3
 
 import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
@@ -8,6 +8,7 @@ import cors from 'cors';
 import compression from 'compression';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
+import axios from 'axios';
 
 // 환경 변수 설정
 dotenv.config();
@@ -40,6 +41,53 @@ const authMiddleware = (req: express.Request, res: express.Response, next: expre
   // 항상 인증 통과 (개발 및 테스트용)
   return next();
 };
+
+// YouTube 비디오 ID 추출 함수
+function extractYouTubeVideoId(url: string): string | null {
+  // YouTube URL에서 비디오 ID 추출
+  let videoId = null;
+  
+  // 정규식 패턴으로 비디오 ID 추출
+  const patterns = [
+    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/v\/|youtube\.com\/watch\?.*v=)([^&\s]+)/,
+    /youtube\.com\/watch\?.*v=([^&\s]+)/
+  ];
+  
+  for (const pattern of patterns) {
+    const match = url.match(pattern);
+    if (match && match[1]) {
+      videoId = match[1];
+      break;
+    }
+  }
+  
+  return videoId;
+}
+
+// YouTube 자막 가져오기 함수
+async function fetchYouTubeTranscript(videoId: string): Promise<string> {
+  try {
+    console.log(`YouTube 자막 가져오기 시작: 비디오 ID ${videoId}`);
+    
+    // 여기서는 실제로 YouTube 자막 API를 호출하는 대신 더미 데이터 반환
+    // 실제 구현에서는 적절한 API를 사용해야 함
+    return `이것은 YouTube 비디오 ID ${videoId}에 대한 임시 자막입니다.
+    
+실제 구현에서는 YouTube API 또는 서드파티 라이브러리를 사용하여 실제 자막을 가져와야 합니다.
+    
+지금은 테스트 목적으로 이 더미 텍스트를 반환합니다.
+    
+이 비디오는 다음 주제를 다룹니다:
+- YouTube 자막 가져오기
+- 텍스트 분석
+- 콘텐츠 요약
+    
+Firebase Functions가 성공적으로 배포되었습니다!`;
+  } catch (error) {
+    console.error('YouTube 자막 가져오기 오류:', error);
+    return '자막을 가져오는 중 오류가 발생했습니다.';
+  }
+}
 
 // 기본 라우트 (루트 경로)
 app.get('/', (req, res) => {
@@ -92,7 +140,57 @@ app.post('/analyze/content', authMiddleware, (req, res) => {
   }
 });
 
-// YouTube 분석 엔드포인트 (경로에서 /api 제거)
+// YouTube 자막 가져오기 엔드포인트 (새로 추가)
+app.post('/analyze/youtube-transcript', authMiddleware, async (req, res) => {
+  try {
+    const { url } = req.body;
+    
+    if (!url) {
+      return res.status(400).json({
+        success: false,
+        message: 'YouTube URL이 필요합니다.',
+      });
+    }
+    
+    // YouTube URL 검증
+    if (!url.includes('youtube.com') && !url.includes('youtu.be')) {
+      return res.status(400).json({
+        success: false,
+        message: '유효한 YouTube URL이 아닙니다.',
+      });
+    }
+    
+    console.log(`YouTube 자막 가져오기 요청: ${url}`);
+    
+    // YouTube 비디오 ID 추출
+    const videoId = extractYouTubeVideoId(url);
+    
+    if (!videoId) {
+      return res.status(400).json({
+        success: false,
+        message: 'YouTube 비디오 ID를 추출할 수 없습니다.',
+      });
+    }
+    
+    // YouTube 자막 가져오기
+    const transcript = await fetchYouTubeTranscript(videoId);
+    
+    return res.status(200).json({
+      success: true,
+      videoId,
+      transcript,
+    });
+  } catch (error: any) {
+    console.error('YouTube 자막 가져오기 오류:', error);
+    
+    return res.status(500).json({
+      success: false,
+      message: `YouTube 자막 가져오기 중 오류가 발생했습니다: ${error.message}`,
+    });
+  }
+});
+
+// YouTube 분석 엔드포인트
 app.post('/analyze/youtube', authMiddleware, (req, res) => {
   try {
     const { url } = req.body;

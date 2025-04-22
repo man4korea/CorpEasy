@@ -1,5 +1,5 @@
 // 📁 frontend/src/pages/ContentAnalyzerPage.tsx
-// Create at 2504231129 Ver2.2
+// Create at 2504231215 Ver2.5
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -24,7 +24,7 @@ const ContentAnalyzerPage: React.FC = () => {
   const [transcript, setTranscript] = useState<string | null>(null);
   const [showTranscript, setShowTranscript] = useState(false);
 
-  // YouTube 자막 가져오기 함수
+  // YouTube 자막 가져오기 함수 (대체 경로 사용)
   const fetchYouTubeTranscript = async (url: string) => {
     setIsLoading(true);
     setError(null);
@@ -34,28 +34,32 @@ const ContentAnalyzerPage: React.FC = () => {
       // API 기본 URL 가져오기
       const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3002';
       
-      console.log(`YouTube 자막 API 호출: ${API_BASE_URL}/api/youtube-transcript`);
+      // 대체 경로: /api/analyze/content 사용 (이미 배포되어 있는 경로)
+      console.log(`YouTube 자막 API 호출 (대체 경로): ${API_BASE_URL}/api/analyze/content`);
       
-      // YouTube 자막 API 호출 (수정된 경로와 메서드)
-      // 백엔드 라우터에 맞춰 POST 요청으로 변경
-      const response = await axios.post(`${API_BASE_URL}/api/youtube-transcript`, { 
-        url: url 
+      // 콘텐츠 분석 API 호출
+      const response = await axios.post(`${API_BASE_URL}/api/analyze/content`, { 
+        url: url,
+        type: 'youtube',
+        extractTranscript: true // 자막 추출 옵션 추가
       });
       
       console.log('API 응답:', response.data);
       
       // API 응답 구조에 맞게 처리
-      if (response.data && response.data.success && response.data.data) {
-        // 성공 응답의 data.transcript 필드 확인
-        const transcriptText = response.data.data.transcript;
-        setTranscript(transcriptText);
-        setShowTranscript(true);
-      } else if (response.data && response.data.transcript) {
-        // 직접 transcript 필드가 있는 경우
+      if (response.data && response.data.transcript) {
         setTranscript(response.data.transcript);
         setShowTranscript(true);
+      } else if (response.data && response.data.content) {
+        // content 필드에 자막이 있을 수 있음
+        setTranscript(response.data.content);
+        setShowTranscript(true);
+      } else if (response.data && response.data.text) {
+        // text 필드에 자막이 있을 수 있음
+        setTranscript(response.data.text);
+        setShowTranscript(true);
       } else {
-        setError(response.data?.message || "자막을 가져오는 중 오류가 발생했습니다.");
+        setError("자막을 가져오는 중 오류가 발생했습니다. 응답에 자막 데이터가 없습니다.");
       }
     } catch (err: any) {
       console.error("YouTube 자막 가져오기 오류:", err);

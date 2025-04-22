@@ -1,5 +1,5 @@
 // 📁 frontend/src/pages/ContentAnalyzerPage.tsx
-// Create at 2504231731 Ver3.0
+// Create at 2504232145 Ver3.1
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -34,46 +34,66 @@ const ContentAnalyzerPage: React.FC = () => {
       // API 기본 URL 가져오기 - 환경 변수만 사용하도록 수정
       const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
       
-      console.log(`YouTube 자막 API 호출: ${API_BASE_URL}/api/analyze/youtube`);
+      console.log(`YouTube 자막 API 호출: ${API_BASE_URL}/api/youtube-transcript`);
       
-      // YouTube 분석 API 호출 (올바른 엔드포인트와 매개변수 사용)
-      const response = await axios.post(`${API_BASE_URL}/api/analyze/youtube`, { 
-        url: url
+      // 올바른 YouTube 자막 API 엔드포인트로 수정
+      const response = await axios.get(`${API_BASE_URL}/api/youtube-transcript`, { 
+        params: { url }
       });
       
       console.log('API 응답:', response.data);
       
-      // API 응답 구조에 맞게 처리
-      if (response.data && response.data.transcript) {
-        // 직접적인 transcript 필드 사용
-        setTranscript(response.data.transcript);
-        setShowTranscript(true);
-      } else if (response.data && response.data.success && response.data.analysis) {
-        // 중첩된 구조에서 transcript 필드 찾기
-        const analysisData = response.data.analysis;
+      if (response.data) {
+        // 자막 텍스트 처리
+        let transcriptText = '';
         
-        if (analysisData.transcript) {
-          setTranscript(analysisData.transcript);
-          setShowTranscript(true);
-        } else if (analysisData.content) {
-          // content 필드에 자막이 있을 수 있음
-          setTranscript(analysisData.content);
-          setShowTranscript(true);
-        } else if (analysisData.summary) {
-          // summary 필드에 자막이 있을 수 있음
-          setTranscript(analysisData.summary);
-          setShowTranscript(true);
+        if (Array.isArray(response.data)) {
+          // 배열 형태로 반환된 경우 (각 항목에 text 필드가 있는 경우)
+          transcriptText = response.data
+            .map((item: { text: string }) => item.text)
+            .join(' ')
+            .replace(/\s+/g, ' ');
+        } else if (typeof response.data === 'string') {
+          // 문자열로 바로 반환된 경우
+          transcriptText = response.data;
+        } else if (response.data.transcript) {
+          // transcript 필드에 문자열이 있는 경우
+          transcriptText = response.data.transcript;
         } else {
-          setError("자막을 가져오는 중 오류가 발생했습니다. 응답에 자막 데이터가 없습니다.");
+          throw new Error('자막 데이터 형식이 예상과 다릅니다.');
         }
+        
+        setTranscript(transcriptText);
+        setShowTranscript(true);
       } else {
-        setError(response.data?.message || "자막을 가져오는 중 오류가 발생했습니다.");
+        throw new Error('자막 데이터를 가져올 수 없습니다.');
       }
     } catch (err: any) {
       console.error("YouTube 자막 가져오기 오류:", err);
       setError(err.response?.data?.message || err.message || "자막을 가져오는 중 오류가 발생했습니다.");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // YouTube 비디오 ID 추출 함수
+  const extractVideoId = (url: string): string | null => {
+    try {
+      const urlObj = new URL(url);
+
+      if (urlObj.hostname === 'youtu.be') {
+        return urlObj.pathname.substring(1);
+      }
+
+      if (urlObj.hostname.includes('youtube.com')) {
+        const searchParams = new URLSearchParams(urlObj.search);
+        return searchParams.get('v');
+      }
+
+      return null;
+    } catch (error) {
+      console.error('YouTube URL 파싱 오류:', error);
+      return null;
     }
   };
 

@@ -1,5 +1,5 @@
 // 📁 frontend/src/pages/ContentAnalyzerPage.tsx
-// Create at 2504221920 Ver2.0
+// Create at 2504231051 Ver2.1
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -34,18 +34,55 @@ const ContentAnalyzerPage: React.FC = () => {
       // API 기본 URL 가져오기
       const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3002';
       
-      // YouTube 자막 API 호출
-      const response = await axios.post(`${API_BASE_URL}/api/analyze/youtube-transcript`, { url });
+      console.log(`YouTube 자막 API 호출: ${API_BASE_URL}/api/youtube-transcript`);
       
-      if (response.data.success && response.data.transcript) {
+      // YouTube 자막 API 호출 (수정된 경로)
+      const response = await axios.post(`${API_BASE_URL}/api/youtube-transcript`, { url });
+      
+      console.log('API 응답:', response.data);
+      
+      // API 응답 구조에 맞게 처리 (백엔드 응답 형식에 따라 조정 필요)
+      if (response.data && response.data.transcript) {
         setTranscript(response.data.transcript);
         setShowTranscript(true);
+      } else if (response.data && response.data.text) {
+        // 백엔드에서 'text' 필드로 반환하는 경우
+        setTranscript(response.data.text);
+        setShowTranscript(true);
       } else {
-        setError(response.data.message || "자막을 가져오는 중 오류가 발생했습니다.");
+        setError(response.data?.message || "자막을 가져오는 중 오류가 발생했습니다.");
       }
     } catch (err: any) {
       console.error("YouTube 자막 가져오기 오류:", err);
       setError(err.response?.data?.message || err.message || "자막을 가져오는 중 오류가 발생했습니다.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // 자막으로 분석 처리 함수
+  const analyzeTranscript = async (transcriptText: string) => {
+    if (!transcriptText) {
+      setError("분석할 자막이 없습니다.");
+      return;
+    }
+    
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      // 텍스트 분석 API 사용 (자막은 텍스트로 취급)
+      const response = await contentAnalysisApi.analyzeContent(transcriptText);
+      
+      if (response.success && response.analysisId) {
+        // 분석 결과 페이지로 리다이렉트
+        navigate(`/analysis/${response.analysisId}`);
+      } else {
+        setError(response.message || "분석 중 오류가 발생했습니다. 다시 시도해주세요.");
+      }
+    } catch (err: any) {
+      console.error("자막 분석 중 오류 발생:", err);
+      setError(err.response?.data?.message || err.message || "서버 연결 중 오류가 발생했습니다. 다시 시도해주세요.");
     } finally {
       setIsLoading(false);
     }
@@ -58,8 +95,14 @@ const ContentAnalyzerPage: React.FC = () => {
       return;
     }
     
-    // YouTube 탭이 활성화되어 있고 자막 가져오기가 요청된 경우
+    // YouTube 탭이 활성화되어 있는 경우
     if (activeTab === 'youtube') {
+      // YouTube URL 패턴 검증
+      if (!inputValue.includes('youtube.com') && !inputValue.includes('youtu.be')) {
+        setError('유효한 YouTube URL을 입력해주세요.');
+        return;
+      }
+      
       await fetchYouTubeTranscript(inputValue);
       return; // 여기서 함수 종료 (자막만 가져오기 위해)
     }
@@ -71,22 +114,17 @@ const ContentAnalyzerPage: React.FC = () => {
       let response;
       
       // 활성 탭에 따라 다른 API 호출
-      if (activeTab === 'youtube') {
-        // YouTube URL 패턴 검증
-        if (!inputValue.includes('youtube.com') && !inputValue.includes('youtu.be')) {
-          throw new Error('유효한 YouTube URL을 입력해주세요.');
-        }
-        response = await contentAnalysisApi.analyzeYouTubeContent(inputValue);
-      } else {
-        // 일반 URL/텍스트 분석
+      if (activeTab === 'url') {
+        response = await contentAnalysisApi.analyzeContent(inputValue);
+      } else if (activeTab === 'text') {
         response = await contentAnalysisApi.analyzeContent(inputValue);
       }
       
-      if (response.success && response.analysisId) {
+      if (response && response.success && response.analysisId) {
         // 분석 결과 페이지로 리다이렉트
         navigate(`/analysis/${response.analysisId}`);
       } else {
-        setError(response.message || "분석 중 오류가 발생했습니다. 다시 시도해주세요.");
+        setError((response && response.message) || "분석 중 오류가 발생했습니다. 다시 시도해주세요.");
       }
     } catch (err: any) {
       console.error("분석 중 오류 발생:", err);
@@ -299,13 +337,7 @@ const ContentAnalyzerPage: React.FC = () => {
                   닫기
                 </button>
                 <button
-                  onClick={() => {
-                    // 이 버튼을 눌렀을 때 추가 분석 단계로 진행할 수 있습니다
-                    // 예: analyzeYouTubeContent API 호출 등
-                    setTranscript(null);
-                    setShowTranscript(false);
-                    // 분석 로직 추가 (나중에 구현)
-                  }}
+                  onClick={() => analyzeTranscript(transcript)}
                   className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
                 >
                   자막으로 분석하기

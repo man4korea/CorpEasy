@@ -1,5 +1,5 @@
 // 📁 backend/functions/src/index.ts
-// Create at 2504221740 Ver2.1
+// Create at 2504221810 Ver2.2
 
 import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
@@ -39,34 +39,15 @@ app.use((req, res, next) => {
 const authMiddleware = (req: express.Request, res: express.Response, next: express.NextFunction) => {
   // 항상 인증 통과 (개발 및 테스트용)
   return next();
-  
-  // 아래 인증 로직은 나중에 활성화할 수 있습니다
-  /*
-  // 개발 환경에서는 인증 건너뛰기
-  if (process.env.NODE_ENV !== 'production') {
-    return next();
-  }
-  
-  // 기본적인 인증 로직
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ error: '인증이 필요합니다' });
-  }
-  
-  // 여기에 토큰 검증 로직 추가 가능
-  // const token = authHeader.split('Bearer ')[1];
-  
-  next();
-  */
 };
 
-// 기본 라우트
-app.get('/api', (req, res) => {
+// 기본 라우트 (루트 경로)
+app.get('/', (req, res) => {
   res.status(200).send('CorpEasy API is running');
 });
 
-// 분석 API 엔드포인트 (임시)
-app.post('/api/analyze/content', authMiddleware, (req, res) => {
+// 분석 API 엔드포인트 (경로에서 /api 제거)
+app.post('/analyze/content', authMiddleware, (req, res) => {
   try {
     const { input } = req.body;
     
@@ -111,8 +92,8 @@ app.post('/api/analyze/content', authMiddleware, (req, res) => {
   }
 });
 
-// YouTube 분석 엔드포인트
-app.post('/api/analyze/youtube', authMiddleware, (req, res) => {
+// YouTube 분석 엔드포인트 (경로에서 /api 제거)
+app.post('/analyze/youtube', authMiddleware, (req, res) => {
   try {
     const { url } = req.body;
     
@@ -165,8 +146,8 @@ app.post('/api/analyze/youtube', authMiddleware, (req, res) => {
   }
 });
 
-// 콘텐츠 분석 결과 조회 엔드포인트
-app.get('/api/analyze/content/:analysisId', authMiddleware, (req, res) => {
+// 콘텐츠 분석 결과 조회 엔드포인트 (경로에서 /api 제거)
+app.get('/analyze/content/:analysisId', authMiddleware, (req, res) => {
   try {
     const { analysisId } = req.params;
     
@@ -205,8 +186,8 @@ app.get('/api/analyze/content/:analysisId', authMiddleware, (req, res) => {
   }
 });
 
-// 상세 분석 엔드포인트
-app.get('/api/analyze/detail/:analysisId', authMiddleware, (req, res) => {
+// 상세 분석 엔드포인트 (경로에서 /api 제거)
+app.get('/analyze/detail/:analysisId', authMiddleware, (req, res) => {
   try {
     const { analysisId } = req.params;
     

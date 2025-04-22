@@ -1,5 +1,5 @@
 // 📁 frontend/src/pages/ContentAnalyzerPage.tsx
-// Create at 2504231215 Ver2.5
+// Create at 2504231731 Ver3.0
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -24,29 +24,32 @@ const ContentAnalyzerPage: React.FC = () => {
   const [transcript, setTranscript] = useState<string | null>(null);
   const [showTranscript, setShowTranscript] = useState(false);
 
-  // YouTube 자막 가져오기 함수 (대체 경로 사용)
+  // YouTube 자막 가져오기 함수
   const fetchYouTubeTranscript = async (url: string) => {
     setIsLoading(true);
     setError(null);
     setTranscript(null);
     
     try {
-      // API 기본 URL 가져오기
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3002';
+      // API 기본 URL 가져오기 - 환경 변수만 사용하도록 수정
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
       
-      // 올바른 엔드포인트: /api/analyze/youtube 사용
-      console.log(`YouTube 자막 API 호출 (올바른 엔드포인트): ${API_BASE_URL}/api/analyze/youtube`);
+      console.log(`YouTube 자막 API 호출: ${API_BASE_URL}/api/analyze/youtube`);
       
-      // 올바른 엔드포인트로 YouTube 분석 API 호출
+      // YouTube 분석 API 호출 (올바른 엔드포인트와 매개변수 사용)
       const response = await axios.post(`${API_BASE_URL}/api/analyze/youtube`, { 
-        url: url  // 분석 라우터에서 요구하는 올바른 매개변수
+        url: url
       });
       
       console.log('API 응답:', response.data);
       
       // API 응답 구조에 맞게 처리
-      if (response.data && response.data.success && response.data.analysis) {
-        // 성공 응답의 analysis.transcript 필드 확인
+      if (response.data && response.data.transcript) {
+        // 직접적인 transcript 필드 사용
+        setTranscript(response.data.transcript);
+        setShowTranscript(true);
+      } else if (response.data && response.data.success && response.data.analysis) {
+        // 중첩된 구조에서 transcript 필드 찾기
         const analysisData = response.data.analysis;
         
         if (analysisData.transcript) {

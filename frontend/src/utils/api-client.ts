@@ -1,10 +1,10 @@
 // 📁 frontend/src/utils/api-client.ts
-// Create at 2504202055 Ver1.0
+// Create at 2504231747 Ver2.0
 
 import axios, { AxiosRequestConfig, AxiosResponse, AxiosError } from 'axios';
 
-// 환경 변수에서 API 기본 URL 가져오기
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
+// 환경 변수에서 API 기본 URL 가져오기 - 하드코딩된 기본값 없이 환경변수만 사용
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 
 /**
  * API 요청을 처리하는 클라이언트

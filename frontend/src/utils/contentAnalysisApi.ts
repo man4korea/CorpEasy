@@ -1,13 +1,18 @@
 // 📁 frontend/src/utils/contentAnalysisApi.ts
-// Create at 2504211647 Ver1.5
+// Create at 2504231814 Ver2.0
 
 import axios from 'axios';
 
-// API 기본 URL 설정 (끝에 /api가 포함되지 않도록 주의)
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3002';
+// API 기본 URL 설정 (배포 환경에서는 빈 문자열 사용)
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 
 // API URL 생성 헬퍼 함수
 function getApiUrl(path: string): string {
+  // API_BASE_URL이 비어있는 경우(배포 환경) '/api'로 시작
+  if (API_BASE_URL === '') {
+    return `/api${path.startsWith('/') ? path : '/' + path}`;
+  }
+  
   // API_BASE_URL에 이미 /api가 포함되어 있는지 확인
   if (API_BASE_URL.includes('/api')) {
     // /api가 포함된 경우, /api 없이 경로 반환

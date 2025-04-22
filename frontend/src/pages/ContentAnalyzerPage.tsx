@@ -1,5 +1,5 @@
 // 📁 frontend/src/pages/ContentAnalyzerPage.tsx
-// Create at 2504231051 Ver2.1
+// Create at 2504231129 Ver2.2
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -36,18 +36,23 @@ const ContentAnalyzerPage: React.FC = () => {
       
       console.log(`YouTube 자막 API 호출: ${API_BASE_URL}/api/youtube-transcript`);
       
-      // YouTube 자막 API 호출 (수정된 경로)
-      const response = await axios.post(`${API_BASE_URL}/api/youtube-transcript`, { url });
+      // YouTube 자막 API 호출 (수정된 경로와 메서드)
+      // 백엔드 라우터에 맞춰 POST 요청으로 변경
+      const response = await axios.post(`${API_BASE_URL}/api/youtube-transcript`, { 
+        url: url 
+      });
       
       console.log('API 응답:', response.data);
       
-      // API 응답 구조에 맞게 처리 (백엔드 응답 형식에 따라 조정 필요)
-      if (response.data && response.data.transcript) {
-        setTranscript(response.data.transcript);
+      // API 응답 구조에 맞게 처리
+      if (response.data && response.data.success && response.data.data) {
+        // 성공 응답의 data.transcript 필드 확인
+        const transcriptText = response.data.data.transcript;
+        setTranscript(transcriptText);
         setShowTranscript(true);
-      } else if (response.data && response.data.text) {
-        // 백엔드에서 'text' 필드로 반환하는 경우
-        setTranscript(response.data.text);
+      } else if (response.data && response.data.transcript) {
+        // 직접 transcript 필드가 있는 경우
+        setTranscript(response.data.transcript);
         setShowTranscript(true);
       } else {
         setError(response.data?.message || "자막을 가져오는 중 오류가 발생했습니다.");

@@ -1,5 +1,5 @@
 // 📁 backend/routes/youtube-router.ts
-// Create at 2504211538 Ver1.2
+// Create at 2504232215 Ver1.3
 // YouTube 트랜스크립트 및 정보 추출 라우터
 
 import express from 'express';
@@ -134,13 +134,16 @@ router.post('/', asyncHandler(async (req, res) => {
   }
 }));
 
-// 기존 엔드포인트: URL로부터 트랜스크립트 가져오기
+// 기존 엔드포인트: URL로부터 트랜스크립트 가져오기 - "/api/youtube/transcript"로 등록
 router.get('/transcript', asyncHandler(async (req, res) => {
   const { url } = req.query;
 
   if (!url || typeof url !== 'string') {
     throw ApiError.badRequest('URL 파라미터가 없습니다.');
   }
+
+  // 디버깅 정보 추가
+  logger.info(`YouTube 트랜스크립트 요청 - URL: ${url}`);
 
   // 캐시 키 생성
   const cacheKey = `youtube:url:${url}`;
@@ -150,7 +153,10 @@ router.get('/transcript', asyncHandler(async (req, res) => {
   
   if (cachedData) {
     logger.info('🎯 YouTube 캐시 히트: 저장된 데이터 반환');
-    return res.json(cachedData);
+    return res.json({
+      success: true,
+      data: cachedData
+    });
   }
   
   logger.info('🔍 YouTube 캐시 미스: 콘텐츠 추출 수행');
@@ -161,9 +167,35 @@ router.get('/transcript', asyncHandler(async (req, res) => {
     // 결과 캐싱 (6시간)
     await cache.set(cacheKey, content, 21600);
     
-    res.json(content);
+    // 응답 형식 표준화
+    res.json({
+      success: true,
+      data: content
+    });
   } catch (err: any) {
     logger.error('❌ YouTube 콘텐츠 추출 실패:', err);
+    throw ApiError.apiClientError('콘텐츠 추출 중 오류 발생', {
+      message: err.message,
+      url
+    });
+  }
+}));
+
+// "/api/youtube-transcript" 라우트 추가 - 이전 버전과의 호환성 유지
+router.get('/transcript-legacy', asyncHandler(async (req, res) => {
+  const { url } = req.query;
+
+  if (!url || typeof url !== 'string') {
+    throw ApiError.badRequest('URL 파라미터가 없습니다.');
+  }
+  
+  logger.info(`YouTube 레거시 트랜스크립트 요청 - URL: ${url}`);
+
+  try {
+    const content = await getYoutubeContent(url);
+    res.json(content);  // 예전 형식으로 반환 (표준화하지 않음)
+  } catch (err: any) {
+    logger.error('❌ YouTube 레거시 콘텐츠 추출 실패:', err);
     throw ApiError.apiClientError('콘텐츠 추출 중 오류 발생', {
       message: err.message,
       url
@@ -192,7 +224,10 @@ router.get('/:videoId', asyncHandler(async (req, res) => {
   
   if (cachedData) {
     logger.info('🎯 YouTube 캐시 히트: 저장된 데이터 반환');
-    return res.json(cachedData);
+    return res.json({
+      success: true,
+      data: cachedData
+    });
   }
   
   logger.info('🔍 YouTube 캐시 미스: API 요청 수행');
@@ -229,7 +264,10 @@ router.get('/:videoId', asyncHandler(async (req, res) => {
     // 결과 캐싱 (1일)
     await cache.set(cacheKey, result, 86400);
     
-    res.json(result);
+    res.json({
+      success: true,
+      data: result
+    });
   } catch (error: any) {
     logger.error('🔥 YouTube API 호출 오류:', error);
     
@@ -276,6 +314,7 @@ router.post('/extract-id', (req, res) => {
     }
     
     res.json({
+      success: true,
       url,
       videoId,
       thumbnailUrl: `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`
@@ -303,7 +342,7 @@ router.get('/', (req, res) => {
       {
         path: '/transcript',
         method: 'GET',
-        description: 'YouTube URL로부터 자막 및 콘텐츠 추출 (기존 API)',
+        description: 'YouTube URL로부터 자막 및 콘텐츠 추출',
         parameters: {
           url: '쿼리 파라미터 - YouTube 비디오 URL'
         }

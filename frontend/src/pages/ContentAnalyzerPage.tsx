@@ -34,10 +34,10 @@ const ContentAnalyzerPage: React.FC = () => {
       // API 기본 URL 가져오기 - 환경 변수만 사용하도록 수정
       const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
       
-      console.log(`YouTube 자막 API 호출: ${API_BASE_URL}/api/youtube-transcript`);
+      console.log(`YouTube 자막 API 호출: ${API_BASE_URL}/api/youtube/transcript`);
       
-      // 올바른 YouTube 자막 API 엔드포인트로 수정
-      const response = await axios.get(`${API_BASE_URL}/api/youtube-transcript`, { 
+      // 올바른 YouTube 자막 API 엔드포인트로 수정 (youtube-transcript → youtube/transcript)
+      const response = await axios.get(`${API_BASE_URL}/api/youtube/transcript`, { 
         params: { url }
       });
       
@@ -47,7 +47,21 @@ const ContentAnalyzerPage: React.FC = () => {
         // 자막 텍스트 처리
         let transcriptText = '';
         
-        if (Array.isArray(response.data)) {
+        // 구조화된 응답인 경우의 다양한 패턴 처리
+        if (response.data.data && response.data.data.transcript) {
+          // { data: { transcript: "..." } } 구조
+          transcriptText = response.data.data.transcript;
+        } else if (response.data.success && response.data.data) {
+          // { success: true, data: ... } 구조 (일반적인 API 응답)
+          const data = response.data.data;
+          if (typeof data === 'string') {
+            transcriptText = data;
+          } else if (data.transcript) {
+            transcriptText = data.transcript;
+          } else if (data.content) {
+            transcriptText = data.content;
+          }
+        } else if (Array.isArray(response.data)) {
           // 배열 형태로 반환된 경우 (각 항목에 text 필드가 있는 경우)
           transcriptText = response.data
             .map((item: { text: string }) => item.text)
@@ -59,7 +73,11 @@ const ContentAnalyzerPage: React.FC = () => {
         } else if (response.data.transcript) {
           // transcript 필드에 문자열이 있는 경우
           transcriptText = response.data.transcript;
+        } else if (response.data.content) {
+          // content 필드에 문자열이 있는 경우
+          transcriptText = response.data.content;
         } else {
+          console.error('응답 구조:', response.data);
           throw new Error('자막 데이터 형식이 예상과 다릅니다.');
         }
         
@@ -70,7 +88,20 @@ const ContentAnalyzerPage: React.FC = () => {
       }
     } catch (err: any) {
       console.error("YouTube 자막 가져오기 오류:", err);
-      setError(err.response?.data?.message || err.message || "자막을 가져오는 중 오류가 발생했습니다.");
+      
+      // 더 상세한 오류 정보 로깅
+      if (err.response) {
+        console.error("응답 상태:", err.response.status);
+        console.error("응답 헤더:", err.response.headers);
+        console.error("응답 데이터:", err.response.data);
+      } else if (err.request) {
+        console.error("요청 정보:", err.request);
+      }
+      
+      const errorMessage = err.response?.data?.message || err.message || "자막을 가져오는 중 오류가 발생했습니다.";
+      console.error("오류 메시지:", errorMessage);
+      
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }

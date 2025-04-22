@@ -1,5 +1,5 @@
 // 📁 backend/services/youtubeContentService.ts
-// Create at 2504191107
+// Create at 2504232245 Ver1.1
 
 import axios from 'axios';
 import { logger } from '../utils/logger';
@@ -43,24 +43,32 @@ export class YoutubeContentService {
    */
   static async fetchTranscript(videoId: string): Promise<string> {
     try {
-      const response = await axios.get(`${process.env.API_BASE_URL}/api/youtube-transcript?videoId=${videoId}`);
+      // 엔드포인트 경로 수정: youtube-transcript → youtube/transcript
+      const response = await axios.get(`${process.env.API_BASE_URL}/api/youtube/transcript?videoId=${videoId}`);
 
       if (response.status !== 200 || !response.data) {
         throw new Error(`자막 추출 실패: ${response.status}`);
       }
 
-      if (Array.isArray(response.data)) {
+      // 응답 데이터 구조 처리 개선
+      if (response.data.success && response.data.data) {
+        // { success: true, data: ... } 구조 처리
+        const data = response.data.data;
+        if (typeof data === 'string') {
+          return data;
+        } else if (data.transcript) {
+          return data.transcript;
+        } else if (data.content) {
+          return data.content;
+        }
+      } else if (Array.isArray(response.data)) {
         return response.data
           .map((item: { text: string }) => item.text)
           .join(' ')
           .replace(/\s+/g, ' ');
-      }
-
-      if (typeof response.data === 'string') {
+      } else if (typeof response.data === 'string') {
         return response.data;
-      }
-
-      if (response.data.transcript) {
+      } else if (response.data.transcript) {
         return response.data.transcript;
       }
 

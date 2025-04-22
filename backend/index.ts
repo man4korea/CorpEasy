@@ -1,5 +1,5 @@
 // 📁 backend/index.ts
-// Create at 2504211423 Ver1.3
+// Create at 2504232220 Ver1.4
 
 import express from 'express';
 import cors from 'cors';
@@ -110,9 +110,26 @@ async function initializeServer() {
     app.use('/api/coji', cojiRouter);
     
     // =====================================================
-    // 콘텐츠 분석 라우터 등록 (중요: 추가된 부분)
+    // 콘텐츠 분석 라우터 등록
     // =====================================================
     app.use('/api/analyze', analyzeRouter);
+    
+    // =====================================================
+    // 호환성을 위한 추가 라우터 등록 (중요: 추가된 부분)
+    // =====================================================
+    // youtube-transcript 경로 리디렉션
+    app.use('/api/youtube-transcript', (req, res, next) => {
+      logger.info('호환성 경로 리디렉션: /api/youtube-transcript -> /api/youtube/transcript');
+      // GET 요청인 경우 youtube/transcript로 리디렉션
+      if (req.method === 'GET') {
+        req.url = '/transcript'; // 경로 재설정
+        youtubeRouter(req, res, next);  // 직접 YouTube 라우터로 전달
+      } else {
+        // 다른 HTTP 메서드는 기본 YouTube 라우터로 전달
+        req.url = '/';
+        youtubeRouter(req, res, next);
+      }
+    });
     
     // =====================================================
     // openaiRouter를 /api/gpt35 경로에도 등록
@@ -218,7 +235,8 @@ async function initializeServer() {
           grok: true,
           openai: true,
           gpt35: true,
-          analyze: true // 분석 API 추가
+          analyze: true, // 분석 API 추가
+          youtubeTranscript: true // YouTube 트랜스크립트 API 추가
         }
       });
     });
@@ -296,47 +314,3 @@ async function initializeWithMemoryCache() {
     
     // 종료 이벤트 핸들러 설정
     setupShutdownHandlers(server);
-  } catch (error) {
-    logger.error('메모리 캐시 서버 초기화 실패:', error);
-    process.exit(1);
-  }
-}
-
-// 서버 종료 핸들러 설정
-function setupShutdownHandlers(server: Server) {
-  const shutdown = () => {
-    logger.info('서버 종료 중...');
-    server.close(() => {
-      logger.info('서버가 정상적으로 종료되었습니다.');
-      process.exit(0);
-    });
-
-    // 10초 후에도 종료되지 않으면 강제 종료
-    setTimeout(() => {
-      logger.error('서버 종료 시간 초과, 강제 종료합니다.');
-      process.exit(1);
-    }, 10000);
-  };
-
-  process.on('SIGTERM', shutdown);
-  process.on('SIGINT', shutdown);
-
-  // 처리되지 않은 예외 처리
-  process.on('uncaughtException', (err) => {
-    logger.error('처리되지 않은 예외:', err);
-    if (!isDev) {
-      process.exit(1);
-    }
-  });
-
-  // 처리되지 않은 Promise 거부 처리
-  process.on('unhandledRejection', (reason) => {
-    logger.error('처리되지 않은 Promise 거부:', reason);
-  });
-}
-
-// 서버 초기화 및 시작
-initializeServer().catch(error => {
-  logger.error('서버 초기화 오류:', error);
-  process.exit(1);
-});

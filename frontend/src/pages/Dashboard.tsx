@@ -50,7 +50,7 @@ const Dashboard: React.FC = () => {
     <div className="container mx-auto p-6">
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-800 mb-2">대시보드</h1>
-        <p className="text-gray-600">안녕하세요, 홍길동님! 오늘의 비즈니스 인사이트를 확인하세요.</p>
+        <p className="text-gray-600">안녕하세요, 이인규님! 깃허브의 액션으로 업데이트 하였습니다.</p>
       </div>
 
       {/* 주요 통계 카드 */}

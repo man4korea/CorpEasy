@@ -58,30 +58,7 @@ const ContentAnalyzerPage: React.FC = () => {
       }
     } catch (error: any) {
       console.error('자막 가져오기 오류:', error);
-      
-      // 오류 메시지 설정
-      const errorMessage = error.response?.data?.message || error.message || '자막을 가져오는 중 오류가 발생했습니다.';
-      setError(errorMessage);
-      
-      // 개발 환경에서 테스트용 더미 데이터 표시
-      if (process.env.NODE_ENV === 'development') {
-        console.log('개발 환경에서 더미 데이터 표시');
-        const videoId = extractVideoId(url);
-        setTranscript(`
-# 테스트 동영상 제목 (실제 API 호출 실패)
-
-URL: ${url}
-
-[0:00] 이것은 테스트용 더미 자막 텍스트입니다.
-[0:05] 백엔드 API 호출에 실패했습니다: ${errorMessage}
-[0:10] 실제 환경에서는 이 텍스트가 표시되지 않습니다.
-        `);
-        
-        setVideoInfo({
-          id: videoId || 'unknown',
-          title: '테스트 동영상 제목 (실제 API 호출 실패)'
-        });
-      }
+      setError(error.response?.data?.message || error.message || '자막을 가져오는 중 오류가 발생했습니다.');
     } finally {
       setLoading(false);
     }

@@ -9,7 +9,6 @@ import compression from 'compression';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
 import axios from 'axios';
-const { YoutubeTranscript } = require('youtube-transcript-api');
 
 // 환경 변수 설정
 dotenv.config();

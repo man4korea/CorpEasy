@@ -1,13 +1,14 @@
 // 📁 backend/index.ts
-// Create at 2504232230 Ver3.0
+// Create at 2504241631 Ver1.5
 
-import * as functions from 'firebase-functions';
-import * as admin from 'firebase-admin';
 import express from 'express';
 import cors from 'cors';
+import dotenv from 'dotenv';
 import compression from 'compression';
 import helmet from 'helmet';
-import dotenv from 'dotenv';
+import { promises as fs } from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { logger } from './utils/logger';
 import { setupErrorHandling } from './middlewares/error-handler';
 import { clientAuthMiddleware, apiKeyMiddleware, setupAuthRoutes } from './middlewares/auth-middleware';
@@ -15,12 +16,8 @@ import { cache, cacheFactory } from './utils/cache-factory';
 import { Server } from 'http';
 
 // ES 모듈에서 __dirname 에뮬레이션
-import { dirname } from 'path';
-import { fileURLToPath } from 'url';
-import path from 'path';
-
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+const __dirname = path.dirname(__filename);
 
 // 라우터 import
 import testRouter from './routes/test-router';
@@ -120,23 +117,21 @@ async function initializeServer() {
     app.use('/api/analyze', analyzeRouter);
     
     // =====================================================
-    // 호환성을 위한 추가 라우터 등록 (중요: 수정된 부분)
+    // 호환성을 위한 추가 라우터 등록 (수정된 부분)
     // =====================================================
-    // youtube-transcript 경로 직접 매핑
-    app.use('/api/youtube-transcript', (req, res, next) => {
-      logger.info('호환성 경로 사용: /api/youtube-transcript -> youtube-router');
-      // GET 요청에 대해 youtube-router로 직접 전달
-      if (req.method === 'GET') {
-        // 요청 경로를 youtube-router의 '/youtube-transcript'로 설정
-        req.url = '/youtube-transcript';
-        youtubeRouter(req, res, next);
-      } else {
-        // 다른 HTTP 메서드는 405 Method Not Allowed 반환
-        res.status(405).json({
-          success: false,
-          message: '지원하지 않는 메서드입니다. GET 요청만 허용됩니다.'
-        });
-      }
+    // youtube-transcript 경로를 youtube/transcript로 직접 매핑
+    app.get('/api/youtube-transcript', (req, res) => {
+      logger.info('호환성 경로 사용: /api/youtube-transcript -> /api/youtube/transcript');
+      
+      // 쿼리 파라미터 유지하며 리디렉션
+      const queryString = Object.keys(req.query)
+        .map(key => `${key}=${encodeURIComponent(req.query[key] as string)}`)
+        .join('&');
+      
+      const redirectUrl = `/api/youtube/transcript${queryString ? '?' + queryString : ''}`;
+      
+      // 301 영구 리디렉션
+      res.redirect(301, redirectUrl);
     });
     
     // =====================================================
@@ -148,41 +143,6 @@ async function initializeServer() {
     app.use((req, res, next) => {
       logger.debug(`요청 URL: ${req.url}, 메서드: ${req.method}, 출처: ${req.headers.origin || 'unknown'}`);
       next();
-    });
-    
-    // 백엔드 상태 확인 엔드포인트 추가
-    app.get('/api/system/status', (req, res) => {
-      const cacheType = (() => {
-        try {
-          return cache.getCurrentCacheType();
-        } catch (e) {
-          return 'unknown (error)';
-        }
-      })();
-      
-      res.json({
-        status: 'ok',
-        version: '1.0.0',
-        uptime: process.uptime(),
-        environment: process.env.NODE_ENV,
-        timestamp: new Date().toISOString(),
-        cache: {
-          type: cacheType,
-          status: 'operational'
-        },
-        endpoints: {
-          youtube: {
-            transcript: '/api/youtube/transcript',
-            alternateTranscript: '/api/youtube-transcript'
-          },
-          ai: {
-            claude: '/api/claude',
-            openai: '/api/openai',
-            gemini: '/api/gemini',
-            grok: '/api/grok'
-          }
-        }
-      });
     });
     
     // 캐시 초기화 (안전하게 시도)
@@ -355,9 +315,6 @@ function gracefulShutdown(server: Server) {
     process.exit(1);
   }, 10000);
 }
-
-// fs 모듈 import
-import { promises as fs } from 'fs';
 
 // 서버 초기화 실행
 initializeServer();

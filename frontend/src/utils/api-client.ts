@@ -1,5 +1,5 @@
 // 📁 frontend/src/utils/api-client.ts
-// Create at 2504231950 Ver3.0
+// Create at 2504232030 Ver4.0
 
 import axios, { AxiosRequestConfig, AxiosResponse, AxiosError } from 'axios';
 
@@ -8,8 +8,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 
 /**
  * 환경에 따라 올바른 API 경로를 생성하는 함수
- * - 로컬 환경: /api/path
- * - 클라우드 함수 환경: /path (api는 자동으로 처리됨)
+ * Firebase Cloud Functions에서는 /api를 접두사로 추가
  */
 export const getApiPath = (path: string): string => {
   // 경로가 이미 /로 시작하는지 확인
@@ -20,19 +19,27 @@ export const getApiPath = (path: string): string => {
                         window.location.hostname.includes('web.app') ||
                         window.location.hostname.includes('cloudfunctions.net');
   
-  // API 기본 URL이 설정되어 있고 클라우드 함수 환경인 경우
-  if (API_BASE_URL && isCloudFunction) {
-    // /api 접두사가 있는 경우 제거 (클라우드 함수는 자동으로 /api를 처리)
-    return normalizedPath.replace(/^\/api/, '');
+  // Cloud Functions 환경에서는 /api 접두사 확인
+  if (isCloudFunction || API_BASE_URL.includes('cloudfunctions.net')) {
+    // YouTube 트랜스크립트 경로 특수 케이스 처리
+    if (normalizedPath.includes('youtube-transcript')) {
+      return `/api${normalizedPath}`;
+    }
+    
+    // 이미 /api로 시작하는 경우 그대로 유지
+    if (normalizedPath.startsWith('/api/')) {
+      return normalizedPath;
+    }
+    
+    // 그 외 경우에 /api 접두사 추가
+    return `/api${normalizedPath}`;
   }
   
-  // 로컬 환경이거나 API_BASE_URL이 없는 경우
-  // 경로에 /api가 포함되어 있는지 확인
+  // 로컬 개발 환경
   if (normalizedPath.startsWith('/api/')) {
     return normalizedPath;
   }
   
-  // 경로에 /api가 없으면 추가
   return `/api${normalizedPath}`;
 };
 
@@ -63,7 +70,7 @@ apiClient.interceptors.request.use(
       // URL이 외부 도메인인 경우 처리하지 않음
       if (!config.url.startsWith('http')) {
         config.url = getApiPath(config.url);
-      console.log('최종 요청 URL:', config.url);
+        console.log('최종 요청 URL:', config.url);
       }
     }
     

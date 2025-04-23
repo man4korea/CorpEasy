@@ -9,6 +9,7 @@ import compression from 'compression';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
 import axios from 'axios';
+import { YoutubeTranscript } from 'youtube-transcript-api';
 
 // 환경 변수 설정
 dotenv.config();
@@ -69,23 +70,20 @@ async function fetchYouTubeTranscript(videoId: string): Promise<string> {
   try {
     console.log(`YouTube 자막 가져오기 시작: 비디오 ID ${videoId}`);
     
-    // 여기서는 실제로 YouTube 자막 API를 호출하는 대신 더미 데이터 반환
-    // 실제 구현에서는 적절한 API를 사용해야 함
-    return `이것은 YouTube 비디오 ID ${videoId}에 대한 임시 자막입니다.
+    // YouTube 자막 API를 사용하여 실제 자막 가져오기
+    const transcripts = await YoutubeTranscript.fetchTranscript(videoId);
     
-실제 구현에서는 YouTube API 또는 서드파티 라이브러리를 사용하여 실제 자막을 가져와야 합니다.
+    // 자막 포맷팅
+    const formattedTranscript = transcripts.map(item => {
+      const minutes = Math.floor(item.offset / 60000);
+      const seconds = Math.floor((item.offset % 60000) / 1000);
+      return `[${minutes}:${seconds.toString().padStart(2, '0')}] ${item.text}`;
+    }).join('\n');
     
-지금은 테스트 목적으로 이 더미 텍스트를 반환합니다.
-    
-이 비디오는 다음 주제를 다룹니다:
-- YouTube 자막 가져오기
-- 텍스트 분석
-- 콘텐츠 요약
-    
-Firebase Functions가 성공적으로 배포되었습니다!`;
+    return formattedTranscript;
   } catch (error) {
     console.error('YouTube 자막 가져오기 오류:', error);
-    return '자막을 가져오는 중 오류가 발생했습니다.';
+    throw new Error('자막을 가져오는 중 오류가 발생했습니다.');
   }
 }
 
@@ -141,7 +139,7 @@ app.post('/analyze/content', authMiddleware, (req, res) => {
 });
 
 // YouTube 자막 가져오기 엔드포인트 (GET 메서드로 추가)
-app.get('/youtube-transcript', authMiddleware, async (req, res) => {
+app.get('/api/youtube-transcript', authMiddleware, async (req, res) => {
   try {
     const { url } = req.query;
     

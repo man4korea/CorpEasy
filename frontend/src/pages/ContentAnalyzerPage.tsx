@@ -1,5 +1,5 @@
 // 📁 frontend/src/pages/ContentAnalyzerPage.tsx
-// Create at 2504232010 Ver15.0
+// Create at 2504232050 Ver16.0
 
 import React, { useState, useEffect } from 'react';
 import api from '../utils/api-client';
@@ -78,7 +78,16 @@ const ContentAnalyzerPage: React.FC = () => {
       
       if (error.response) {
         // 서버에서 응답이 있는 경우
-        errorMessage = error.response.data?.message || errorMessage;
+        // 자막 트랙을 찾을 수 없는 경우 사용자 친화적 메시지 표시
+        if (error.response.data?.message?.includes('자막 트랙을 찾을 수 없습니다') ||
+            error.response.data?.message?.includes('자막을 찾을 수 없습니다')) {
+          errorMessage = '이 영상에서 자막을 찾을 수 없습니다. 다음 사항을 확인해주세요:\n' +
+                         '1. 영상에 자막이 있는지 확인\n' +
+                         '2. 다른 YouTube 영상 시도\n' +
+                         '3. 자동 생성된 자막이 있는 영상 시도';
+        } else if (error.response.data?.message) {
+          errorMessage = error.response.data.message;
+        }
         console.log('서버 응답 에러:', error.response.data);
       } else if (error.request) {
         // 요청은 보냈지만 응답이 없는 경우 (네트워크 문제 등)
@@ -164,7 +173,7 @@ const ContentAnalyzerPage: React.FC = () => {
           
           {/* 오류 메시지 */}
           {error && (
-            <div className="p-4 mb-6 bg-red-50 text-red-700 rounded-md">
+            <div className="p-4 mb-6 bg-red-50 text-red-700 rounded-md whitespace-pre-line">
               {error}
             </div>
           )}
@@ -228,6 +237,55 @@ const ContentAnalyzerPage: React.FC = () => {
               <div className="h-96 overflow-y-auto p-4 bg-gray-50 rounded border border-gray-200 whitespace-pre-wrap">
                 {transcript}
               </div>
+            </div>
+          )}
+
+          {/* 추천 영상 섹션 - 에러가 발생하고 자막을 가져오지 못했을 때만 표시 */}
+          {error && !transcript && (
+            <div className="mt-8 p-4 bg-blue-50 rounded-md">
+              <h3 className="text-lg font-semibold mb-2">자막이 있는 YouTube 영상 예시</h3>
+              <p className="mb-3 text-sm">다음 영상들은, 대체로 자막이 있어 테스트하기 좋은 영상들입니다:</p>
+              <ul className="list-disc pl-5 space-y-1">
+                <li>
+                  <a 
+                    href="#" 
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setUrl('https://www.youtube.com/watch?v=dQw4w9WgXcQ');
+                    }}
+                    className="text-blue-600 hover:underline"
+                  >
+                    Rick Astley - Never Gonna Give You Up
+                  </a>
+                </li>
+                <li>
+                  <a 
+                    href="#" 
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setUrl('https://www.youtube.com/watch?v=9bZkp7q19f0');
+                    }}
+                    className="text-blue-600 hover:underline"
+                  >
+                    PSY - Gangnam Style
+                  </a>
+                </li>
+                <li>
+                  <a 
+                    href="#" 
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setUrl('https://www.youtube.com/watch?v=kJQP7kiw5Fk');
+                    }}
+                    className="text-blue-600 hover:underline"
+                  >
+                    Luis Fonsi - Despacito ft. Daddy Yankee
+                  </a>
+                </li>
+              </ul>
+              <p className="mt-3 text-sm text-gray-600">
+                위 링크를 클릭하면 URL이 자동으로 입력됩니다. 자막 가져오기를 다시 시도해주세요.
+              </p>
             </div>
           )}
         </div>

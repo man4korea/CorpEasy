@@ -36,7 +36,7 @@ const ContentAnalyzerPage: React.FC = () => {
     try {
       // 백엔드 API 호출
       console.log('백엔드 API 호출:', url);
-      const response = await api.get(`/youtube-transcript?url=${encodeURIComponent(url)}`);
+      const response = await api.get(`/api/youtube-transcript?url=${encodeURIComponent(url)}`);
       
       console.log('API 응답:', response.data);
       

@@ -140,10 +140,10 @@ app.post('/analyze/content', authMiddleware, (req, res) => {
   }
 });
 
-// YouTube 자막 가져오기 엔드포인트 (새로 추가)
-app.post('/analyze/youtube-transcript', authMiddleware, async (req, res) => {
+// YouTube 자막 가져오기 엔드포인트 (GET 메서드로 추가)
+app.get('/api/youtube-transcript', authMiddleware, async (req, res) => {
   try {
-    const { url } = req.body;
+    const { url } = req.query;
     
     if (!url) {
       return res.status(400).json({
@@ -153,7 +153,7 @@ app.post('/analyze/youtube-transcript', authMiddleware, async (req, res) => {
     }
     
     // YouTube URL 검증
-    if (!url.includes('youtube.com') && !url.includes('youtu.be')) {
+    if (!url.toString().includes('youtube.com') && !url.toString().includes('youtu.be')) {
       return res.status(400).json({
         success: false,
         message: '유효한 YouTube URL이 아닙니다.',
@@ -163,7 +163,7 @@ app.post('/analyze/youtube-transcript', authMiddleware, async (req, res) => {
     console.log(`YouTube 자막 가져오기 요청: ${url}`);
     
     // YouTube 비디오 ID 추출
-    const videoId = extractYouTubeVideoId(url);
+    const videoId = extractYouTubeVideoId(url.toString());
     
     if (!videoId) {
       return res.status(400).json({

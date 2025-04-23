@@ -71,14 +71,23 @@ async function fetchYouTubeTranscript(videoId: string): Promise<string> {
     console.log(`YouTube 자막 가져오기 시작: 비디오 ID ${videoId}`);
     
     // YouTube 자막 API를 사용하여 실제 자막 가져오기
-    const transcripts = await YoutubeTranscript.fetchTranscript(videoId);
+    const transcriptList = await YoutubeTranscript.fetchTranscript(videoId, {
+      lang: 'ko',  // 한국어 자막 우선
+      country: 'KR'
+    }).catch(() => {
+      // 한국어 자막이 없으면 기본 자막 시도
+      return YoutubeTranscript.fetchTranscript(videoId);
+    });
     
-    if (!transcripts || transcripts.length === 0) {
+    if (!transcriptList || transcriptList.length === 0) {
       throw new Error('자막을 찾을 수 없습니다.');
     }
 
+    // 비디오 제목 가져오기 (옵션)
+    const videoTitle = `# YouTube 자막\n\n`;
+
     // 자막 포맷팅
-    const formattedTranscript = transcripts
+    const formattedTranscript = transcriptList
       .map(item => {
         const minutes = Math.floor(item.offset / 60000);
         const seconds = Math.floor((item.offset % 60000) / 1000);
@@ -86,10 +95,10 @@ async function fetchYouTubeTranscript(videoId: string): Promise<string> {
       })
       .join('\n');
     
-    return formattedTranscript;
+    return videoTitle + formattedTranscript;
   } catch (error) {
     console.error('YouTube 자막 가져오기 오류:', error);
-    throw error;
+    throw new Error(`자막을 가져오는 중 오류가 발생했습니다: ${error.message}`);
   }
 }
 

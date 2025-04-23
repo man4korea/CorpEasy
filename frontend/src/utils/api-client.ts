@@ -1,5 +1,5 @@
 // 📁 frontend/src/utils/api-client.ts
-// Create at 2504232030 Ver4.0
+// Create at 2504232222 Ver5.0
 
 import axios, { AxiosRequestConfig, AxiosResponse, AxiosError } from 'axios';
 
@@ -8,38 +8,19 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 
 /**
  * 환경에 따라 올바른 API 경로를 생성하는 함수
- * Firebase Cloud Functions에서는 /api를 접두사로 추가
+ * - 로컬 환경: /api/path
+ * - 클라우드 함수 환경: /api/path (항상 /api 접두사 포함)
  */
 export const getApiPath = (path: string): string => {
   // 경로가 이미 /로 시작하는지 확인
   const normalizedPath = path.startsWith('/') ? path : `/${path}`;
   
-  // 클라우드 함수 환경인지 확인
-  const isCloudFunction = window.location.hostname.includes('firebaseapp.com') || 
-                        window.location.hostname.includes('web.app') ||
-                        window.location.hostname.includes('cloudfunctions.net');
-  
-  // Cloud Functions 환경에서는 /api 접두사 확인
-  if (isCloudFunction || API_BASE_URL.includes('cloudfunctions.net')) {
-    // YouTube 트랜스크립트 경로 특수 케이스 처리
-    if (normalizedPath.includes('youtube-transcript')) {
-      return `/api${normalizedPath}`;
-    }
-    
-    // 이미 /api로 시작하는 경우 그대로 유지
-    if (normalizedPath.startsWith('/api/')) {
-      return normalizedPath;
-    }
-    
-    // 그 외 경우에 /api 접두사 추가
-    return `/api${normalizedPath}`;
-  }
-  
-  // 로컬 개발 환경
+  // API 접두사 확인 - 모든 환경에서 /api 접두사 유지
   if (normalizedPath.startsWith('/api/')) {
-    return normalizedPath;
+    return normalizedPath; // 이미 /api/로 시작하면 그대로 유지
   }
   
+  // API 접두사 추가 - 항상 /api/ 접두사 사용
   return `/api${normalizedPath}`;
 };
 

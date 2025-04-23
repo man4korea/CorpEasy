@@ -1,5 +1,5 @@
 // 📁 frontend/src/pages/ContentAnalyzerPage.tsx
-// Create at 2504232050 Ver16.0
+// Create at 2504232220 Ver17.0
 
 import React, { useState, useEffect } from 'react';
 import api from '../utils/api-client';
@@ -48,9 +48,10 @@ const ContentAnalyzerPage: React.FC = () => {
     setVideoInfo(null);
     
     try {
-      // 백엔드 API 호출 - 올바른 엔드포인트 사용
+      // 백엔드 API 호출 - 일관된 경로 사용
       console.log('백엔드 API 호출:', url);
-      const response = await api.get(`/youtube-transcript?url=${encodeURIComponent(url)}`);
+      // 명시적으로 /api 경로 포함 (Firebase Functions 호출 방식)
+      const response = await api.get(`/api/youtube-transcript?url=${encodeURIComponent(url)}`);
       
       console.log('API 응답:', response.data);
       

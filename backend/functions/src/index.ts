@@ -80,48 +80,80 @@ async function getYouTubeTranscript(videoId: string): Promise<string> {
     console.log('YouTube 페이지 응답 받음');
     const pageText = pageResponse.data;
 
-    // HTML에서 자막 트랙 정보 추출
-    console.log('자막 트랙 정보 검색 시작');
-    const captionTracksMatch = pageText.match(/"captionTracks":\[(.*?)\]/);
-    if (!captionTracksMatch) {
-      console.log('자막 트랙 정보를 찾을 수 없음. HTML 내용 일부:', pageText.substring(0, 1000));
-      throw new Error('자막 트랙을 찾을 수 없습니다.');
+    // 자막 정보 추출 시도 (여러 패턴)
+    console.log('자막 정보 검색 시작');
+    let captionsData;
+    
+    // 패턴 1: 일반 자막
+    const pattern1 = /"captionTracks":\[(.*?)\]/;
+    // 패턴 2: 자동 생성 자막
+    const pattern2 = /"playerCaptionsTracklistRenderer":\{(.*?)\}/;
+    // 패턴 3: 새로운 형식의 자막
+    const pattern3 = /"captions":\{(.*?)\}/;
+    
+    let match = pageText.match(pattern1) || pageText.match(pattern2) || pageText.match(pattern3);
+    
+    if (!match) {
+      console.log('기본 패턴으로 자막을 찾을 수 없음, 전체 데이터에서 자막 URL 검색');
+      // 직접 자막 URL 찾기 시도
+      const urlPattern = /https:\/\/www\.youtube\.com\/api\/timedtext[^"]+/;
+      const urlMatch = pageText.match(urlPattern);
+      
+      if (urlMatch) {
+        console.log('자막 URL 직접 찾음:', urlMatch[0]);
+        const transcriptResponse = await axios.get(urlMatch[0]);
+        captionsData = transcriptResponse.data;
+      } else {
+        throw new Error('자막 정보를 찾을 수 없습니다.');
+      }
+    } else {
+      console.log('자막 정보 찾음');
+      const jsonStr = `{${match[1]}}`;
+      try {
+        captionsData = JSON.parse(jsonStr);
+      } catch (e) {
+        console.log('JSON 파싱 실패, 직접 URL 추출 시도');
+        const urlPattern = /https:\/\/www\.youtube\.com\/api\/timedtext[^"]+/;
+        const urlMatch = match[1].match(urlPattern);
+        
+        if (urlMatch) {
+          console.log('자막 URL 찾음:', urlMatch[0]);
+          const transcriptResponse = await axios.get(urlMatch[0]);
+          captionsData = transcriptResponse.data;
+        } else {
+          throw new Error('자막 데이터를 파싱할 수 없습니다.');
+        }
+      }
     }
-
-    console.log('자막 트랙 정보 찾음:', captionTracksMatch[1]);
-    const tracks = JSON.parse(`[${captionTracksMatch[1]}]`);
-    console.log('사용 가능한 자막 트랙:', tracks.length);
-
-    // 한국어 자막 우선 시도
-    const koreanTrack = tracks.find((track: any) => 
-      track.languageCode === 'ko' && 
-      (track.kind === 'asr' || track.kind === 'standard')
-    );
-
-    const selectedTrack = koreanTrack || tracks[0]; // 한국어 없으면 첫 번째 자막
-    if (!selectedTrack) {
-      throw new Error('사용 가능한 자막이 없습니다.');
-    }
-
-    console.log('선택된 자막 트랙:', selectedTrack.languageCode);
-
-    // 자막 데이터 가져오기
-    const transcriptUrl = selectedTrack.baseUrl + '&fmt=json3';
-    console.log('자막 데이터 URL:', transcriptUrl);
-    const transcriptResponse = await axios.get(transcriptUrl);
-    const transcriptData = transcriptResponse.data;
 
     // 자막 텍스트 추출 및 포맷팅
-    const segments = transcriptData.events
-      .filter((event: any) => event.segs && event.segs.length > 0)
-      .map((event: any) => {
-        const startTime = Math.floor(event.tStartMs / 1000);
-        const minutes = Math.floor(startTime / 60);
-        const seconds = startTime % 60;
-        const text = event.segs.map((seg: any) => seg.utf8).join('').trim();
-        return `[${minutes}:${seconds.toString().padStart(2, '0')}] ${text}`;
-      })
-      .filter((text: string) => text.trim());
+    let segments: string[] = [];
+    
+    if (captionsData.events) {
+      // 새로운 형식
+      segments = captionsData.events
+        .filter((event: any) => event.segs && event.segs.length > 0)
+        .map((event: any) => {
+          const startTime = Math.floor(event.tStartMs / 1000);
+          const minutes = Math.floor(startTime / 60);
+          const seconds = startTime % 60;
+          const text = event.segs.map((seg: any) => seg.utf8).join('').trim();
+          return `[${minutes}:${seconds.toString().padStart(2, '0')}] ${text}`;
+        });
+    } else if (captionsData.transcript) {
+      // 기존 형식
+      segments = captionsData.transcript
+        .map((item: any) => {
+          const startTime = Math.floor(parseFloat(item.start));
+          const minutes = Math.floor(startTime / 60);
+          const seconds = startTime % 60;
+          return `[${minutes}:${seconds.toString().padStart(2, '0')}] ${item.text}`;
+        });
+    }
+
+    if (segments.length === 0) {
+      throw new Error('자막 텍스트를 추출할 수 없습니다.');
+    }
 
     console.log('자막 추출 완료:', segments.length, '개의 세그먼트');
     return segments.join('\n');

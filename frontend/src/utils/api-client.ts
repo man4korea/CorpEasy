@@ -1,10 +1,40 @@
 // 📁 frontend/src/utils/api-client.ts
-// Create at 2504231747 Ver2.0
+// Create at 2504231950 Ver3.0
 
 import axios, { AxiosRequestConfig, AxiosResponse, AxiosError } from 'axios';
 
 // 환경 변수에서 API 기본 URL 가져오기 - 하드코딩된 기본값 없이 환경변수만 사용
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+
+/**
+ * 환경에 따라 올바른 API 경로를 생성하는 함수
+ * - 로컬 환경: /api/path
+ * - 클라우드 함수 환경: /path (api는 자동으로 처리됨)
+ */
+export const getApiPath = (path: string): string => {
+  // 경로가 이미 /로 시작하는지 확인
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+  
+  // 클라우드 함수 환경인지 확인
+  const isCloudFunction = window.location.hostname.includes('firebaseapp.com') || 
+                        window.location.hostname.includes('web.app') ||
+                        window.location.hostname.includes('cloudfunctions.net');
+  
+  // API 기본 URL이 설정되어 있고 클라우드 함수 환경인 경우
+  if (API_BASE_URL && isCloudFunction) {
+    // /api 접두사가 있는 경우 제거 (클라우드 함수는 자동으로 /api를 처리)
+    return normalizedPath.replace(/^\/api/, '');
+  }
+  
+  // 로컬 환경이거나 API_BASE_URL이 없는 경우
+  // 경로에 /api가 포함되어 있는지 확인
+  if (normalizedPath.startsWith('/api/')) {
+    return normalizedPath;
+  }
+  
+  // 경로에 /api가 없으면 추가
+  return `/api${normalizedPath}`;
+};
 
 /**
  * API 요청을 처리하는 클라이언트
@@ -27,6 +57,15 @@ apiClient.interceptors.request.use(
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    
+    // 환경에 따라 URL 경로 조정
+    if (config.url) {
+      // URL이 외부 도메인인 경우 처리하지 않음
+      if (!config.url.startsWith('http')) {
+        config.url = getApiPath(config.url);
+      }
+    }
+    
     return config;
   },
   (error) => {

@@ -48,7 +48,7 @@ const ContentAnalyzerPage: React.FC = () => {
     setVideoInfo(null);
     
     try {
-      // 백엔드 API 호출 - 올바른 경로 사용
+      // 백엔드 API 호출 - 환경에 맞는 경로 사용
       console.log('백엔드 API 호출:', url);
       const response = await api.get(`/api/youtube/transcript?url=${encodeURIComponent(url)}`);
       

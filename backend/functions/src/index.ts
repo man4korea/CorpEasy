@@ -9,7 +9,7 @@ import compression from 'compression';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
 import axios from 'axios';
-import { YoutubeTranscript } from 'youtube-transcript-api';
+const { YoutubeTranscript } = require('youtube-transcript-api');
 
 // 환경 변수 설정
 dotenv.config();
@@ -73,17 +73,23 @@ async function fetchYouTubeTranscript(videoId: string): Promise<string> {
     // YouTube 자막 API를 사용하여 실제 자막 가져오기
     const transcripts = await YoutubeTranscript.fetchTranscript(videoId);
     
+    if (!transcripts || transcripts.length === 0) {
+      throw new Error('자막을 찾을 수 없습니다.');
+    }
+
     // 자막 포맷팅
-    const formattedTranscript = transcripts.map(item => {
-      const minutes = Math.floor(item.offset / 60000);
-      const seconds = Math.floor((item.offset % 60000) / 1000);
-      return `[${minutes}:${seconds.toString().padStart(2, '0')}] ${item.text}`;
-    }).join('\n');
+    const formattedTranscript = transcripts
+      .map(item => {
+        const minutes = Math.floor(item.offset / 60000);
+        const seconds = Math.floor((item.offset % 60000) / 1000);
+        return `[${minutes}:${seconds.toString().padStart(2, '0')}] ${item.text}`;
+      })
+      .join('\n');
     
     return formattedTranscript;
   } catch (error) {
     console.error('YouTube 자막 가져오기 오류:', error);
-    throw new Error('자막을 가져오는 중 오류가 발생했습니다.');
+    throw error;
   }
 }
 

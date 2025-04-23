@@ -9,6 +9,7 @@ import compression from 'compression';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
 import axios from 'axios';
+import { YoutubeTranscript } from 'youtube-transcript-api';
 
 // 환경 변수 설정
 dotenv.config();
@@ -69,7 +70,25 @@ async function getYouTubeTranscript(videoId: string): Promise<string> {
   try {
     console.log(`YouTube 자막 가져오기 시작: 비디오 ID ${videoId}`);
     
-    // YouTube 페이지의 HTML 가져오기
+    // 1. 먼저 youtube-transcript-api로 시도
+    try {
+      console.log('youtube-transcript-api로 자막 가져오기 시도');
+      const transcriptList = await YoutubeTranscript.fetchTranscript(videoId);
+      if (transcriptList && transcriptList.length > 0) {
+        console.log('youtube-transcript-api로 자막 가져오기 성공');
+        const segments = transcriptList.map(item => {
+          const startTime = Math.floor(item.offset / 1000);
+          const minutes = Math.floor(startTime / 60);
+          const seconds = startTime % 60;
+          return `[${minutes}:${seconds.toString().padStart(2, '0')}] ${item.text}`;
+        });
+        return segments.join('\n');
+      }
+    } catch (apiError) {
+      console.log('youtube-transcript-api 실패, 대체 방법 시도');
+    }
+
+    // 2. API 실패시 직접 HTML 파싱 시도
     console.log('YouTube 페이지 요청 시작');
     const pageResponse = await axios.get(`https://www.youtube.com/watch?v=${videoId}`, {
       headers: {
@@ -80,83 +99,112 @@ async function getYouTubeTranscript(videoId: string): Promise<string> {
     console.log('YouTube 페이지 응답 받음');
     const pageText = pageResponse.data;
 
-    // 자막 정보 추출 시도 (여러 패턴)
-    console.log('자막 정보 검색 시작');
-    let captionsData;
-    
+    // 3. 세 가지 패턴으로 자막 정보 추출 시도
+    let captionsData = null;
+
     // 패턴 1: 일반 자막
     const pattern1 = /"captionTracks":\[(.*?)\]/;
-    // 패턴 2: 자동 생성 자막
-    const pattern2 = /"playerCaptionsTracklistRenderer":\{(.*?)\}/;
-    // 패턴 3: 새로운 형식의 자막
-    const pattern3 = /"captions":\{(.*?)\}/;
-    
-    let match = pageText.match(pattern1) || pageText.match(pattern2) || pageText.match(pattern3);
-    
-    if (!match) {
-      console.log('기본 패턴으로 자막을 찾을 수 없음, 전체 데이터에서 자막 URL 검색');
-      // 직접 자막 URL 찾기 시도
-      const urlPattern = /https:\/\/www\.youtube\.com\/api\/timedtext[^"]+/;
-      const urlMatch = pageText.match(urlPattern);
-      
-      if (urlMatch) {
-        console.log('자막 URL 직접 찾음:', urlMatch[0]);
-        const transcriptResponse = await axios.get(urlMatch[0]);
-        captionsData = transcriptResponse.data;
-      } else {
-        throw new Error('자막 정보를 찾을 수 없습니다.');
-      }
-    } else {
-      console.log('자막 정보 찾음');
-      const jsonStr = `{${match[1]}}`;
+    const match1 = pageText.match(pattern1);
+    if (match1) {
+      console.log('일반 자막 패턴 발견');
       try {
-        captionsData = JSON.parse(jsonStr);
+        const tracks = JSON.parse(`[${match1[1]}]`);
+        const koreanTrack = tracks.find((track: any) => 
+          track.languageCode === 'ko' && 
+          (track.kind === 'asr' || track.kind === 'standard')
+        );
+        const selectedTrack = koreanTrack || tracks[0];
+        if (selectedTrack?.baseUrl) {
+          const response = await axios.get(selectedTrack.baseUrl);
+          captionsData = response.data;
+        }
       } catch (e) {
-        console.log('JSON 파싱 실패, 직접 URL 추출 시도');
-        const urlPattern = /https:\/\/www\.youtube\.com\/api\/timedtext[^"]+/;
-        const urlMatch = match[1].match(urlPattern);
-        
-        if (urlMatch) {
-          console.log('자막 URL 찾음:', urlMatch[0]);
-          const transcriptResponse = await axios.get(urlMatch[0]);
-          captionsData = transcriptResponse.data;
-        } else {
-          throw new Error('자막 데이터를 파싱할 수 없습니다.');
+        console.log('일반 자막 처리 실패:', e.message);
+      }
+    }
+
+    // 패턴 2: 자동 생성 자막
+    if (!captionsData) {
+      const pattern2 = /"playerCaptionsTracklistRenderer":\{(.*?)\}/;
+      const match2 = pageText.match(pattern2);
+      if (match2) {
+        console.log('자동 생성 자막 패턴 발견');
+        try {
+          const trackData = JSON.parse(`{${match2[1]}}`);
+          if (trackData.captionTracks) {
+            const koreanTrack = trackData.captionTracks.find((track: any) => 
+              track.languageCode === 'ko'
+            );
+            const selectedTrack = koreanTrack || trackData.captionTracks[0];
+            if (selectedTrack?.baseUrl) {
+              const response = await axios.get(selectedTrack.baseUrl);
+              captionsData = response.data;
+            }
+          }
+        } catch (e) {
+          console.log('자동 생성 자막 처리 실패:', e.message);
         }
       }
     }
 
-    // 자막 텍스트 추출 및 포맷팅
-    let segments: string[] = [];
-    
-    if (captionsData.events) {
-      // 새로운 형식
-      segments = captionsData.events
-        .filter((event: any) => event.segs && event.segs.length > 0)
-        .map((event: any) => {
-          const startTime = Math.floor(event.tStartMs / 1000);
-          const minutes = Math.floor(startTime / 60);
-          const seconds = startTime % 60;
-          const text = event.segs.map((seg: any) => seg.utf8).join('').trim();
-          return `[${minutes}:${seconds.toString().padStart(2, '0')}] ${text}`;
-        });
-    } else if (captionsData.transcript) {
-      // 기존 형식
-      segments = captionsData.transcript
-        .map((item: any) => {
-          const startTime = Math.floor(parseFloat(item.start));
-          const minutes = Math.floor(startTime / 60);
-          const seconds = startTime % 60;
-          return `[${minutes}:${seconds.toString().padStart(2, '0')}] ${item.text}`;
-        });
+    // 패턴 3: 새로운 형식의 자막
+    if (!captionsData) {
+      const pattern3 = /"captions":\{(.*?)\}/;
+      const match3 = pageText.match(pattern3);
+      if (match3) {
+        console.log('새로운 형식 자막 패턴 발견');
+        try {
+          const captionsInfo = JSON.parse(`{${match3[1]}}`);
+          const playerCaptionsTracklistRenderer = captionsInfo.playerCaptionsTracklistRenderer;
+          if (playerCaptionsTracklistRenderer?.captionTracks) {
+            const koreanTrack = playerCaptionsTracklistRenderer.captionTracks.find((track: any) => 
+              track.languageCode === 'ko'
+            );
+            const selectedTrack = koreanTrack || playerCaptionsTracklistRenderer.captionTracks[0];
+            if (selectedTrack?.baseUrl) {
+              const response = await axios.get(selectedTrack.baseUrl);
+              captionsData = response.data;
+            }
+          }
+        } catch (e) {
+          console.log('새로운 형식 자막 처리 실패:', e.message);
+        }
+      }
     }
 
-    if (segments.length === 0) {
-      throw new Error('자막 텍스트를 추출할 수 없습니다.');
+    // 자막 데이터 처리
+    if (captionsData) {
+      console.log('자막 데이터 처리 시작');
+      let segments: string[] = [];
+
+      if (captionsData.events) {
+        segments = captionsData.events
+          .filter((event: any) => event.segs && event.segs.length > 0)
+          .map((event: any) => {
+            const startTime = Math.floor(event.tStartMs / 1000);
+            const minutes = Math.floor(startTime / 60);
+            const seconds = startTime % 60;
+            const text = event.segs.map((seg: any) => seg.utf8).join('').trim();
+            return `[${minutes}:${seconds.toString().padStart(2, '0')}] ${text}`;
+          });
+      } else if (Array.isArray(captionsData)) {
+        segments = captionsData
+          .filter((item: any) => item.text)
+          .map((item: any) => {
+            const startTime = Math.floor(parseFloat(item.start));
+            const minutes = Math.floor(startTime / 60);
+            const seconds = startTime % 60;
+            return `[${minutes}:${seconds.toString().padStart(2, '0')}] ${item.text}`;
+          });
+      }
+
+      if (segments.length > 0) {
+        console.log('자막 추출 완료:', segments.length, '개의 세그먼트');
+        return segments.join('\n');
+      }
     }
 
-    console.log('자막 추출 완료:', segments.length, '개의 세그먼트');
-    return segments.join('\n');
+    throw new Error('자막을 찾을 수 없습니다.');
   } catch (error) {
     console.error('YouTube 자막 가져오기 오류:', error);
     throw new Error(`자막을 가져오는 중 오류가 발생했습니다: ${error.message}`);

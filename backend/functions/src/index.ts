@@ -317,7 +317,7 @@ app.get('/youtube-transcript', authMiddleware, async (req, res) => {
       });
     }
     
-    // 새로운 방식으로 자막 가져오기
+    // 자막 가져오기
     const transcript = await getYouTubeTranscript(videoId);
     
     return res.status(200).json({

@@ -1,5 +1,5 @@
 // 📁 frontend/src/App.tsx
-// Create at 2504201520 Ver1.3
+// Create at 2504231847 Ver1.5
 
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
@@ -91,9 +91,9 @@ const App: React.FC = () => {
           {/* 대시보드 */}
           <Route index element={<Dashboard />} />
           
-          {/* 콘텐츠 상세분석기 */}
+          {/* 콘텐츠 상세분석기 - 중복 라우트 제거 */}
           <Route path="analyze" element={<AnalyzeInputPage />} />
-          <Route path="content-analyzer" element={<AnalyzeInputPage />} />
+          {/* 유튜브 자막 추출기로 단순화 */}
           <Route path="content-analyzer" element={<ContentAnalyzerPage />} />
           <Route path="content-analysis/:id" element={<ContentAnalysisPage />} />
           

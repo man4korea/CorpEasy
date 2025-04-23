@@ -70,16 +70,27 @@ async function getYouTubeTranscript(videoId: string): Promise<string> {
     console.log(`YouTube 자막 가져오기 시작: 비디오 ID ${videoId}`);
     
     // YouTube 페이지의 HTML 가져오기
-    const pageResponse = await axios.get(`https://www.youtube.com/watch?v=${videoId}`);
+    console.log('YouTube 페이지 요청 시작');
+    const pageResponse = await axios.get(`https://www.youtube.com/watch?v=${videoId}`, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+        'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7'
+      }
+    });
+    console.log('YouTube 페이지 응답 받음');
     const pageText = pageResponse.data;
 
     // HTML에서 자막 트랙 정보 추출
+    console.log('자막 트랙 정보 검색 시작');
     const captionTracksMatch = pageText.match(/"captionTracks":\[(.*?)\]/);
     if (!captionTracksMatch) {
+      console.log('자막 트랙 정보를 찾을 수 없음. HTML 내용 일부:', pageText.substring(0, 1000));
       throw new Error('자막 트랙을 찾을 수 없습니다.');
     }
 
+    console.log('자막 트랙 정보 찾음:', captionTracksMatch[1]);
     const tracks = JSON.parse(`[${captionTracksMatch[1]}]`);
+    console.log('사용 가능한 자막 트랙:', tracks.length);
 
     // 한국어 자막 우선 시도
     const koreanTrack = tracks.find((track: any) => 
@@ -92,8 +103,11 @@ async function getYouTubeTranscript(videoId: string): Promise<string> {
       throw new Error('사용 가능한 자막이 없습니다.');
     }
 
+    console.log('선택된 자막 트랙:', selectedTrack.languageCode);
+
     // 자막 데이터 가져오기
     const transcriptUrl = selectedTrack.baseUrl + '&fmt=json3';
+    console.log('자막 데이터 URL:', transcriptUrl);
     const transcriptResponse = await axios.get(transcriptUrl);
     const transcriptData = transcriptResponse.data;
 
@@ -109,6 +123,7 @@ async function getYouTubeTranscript(videoId: string): Promise<string> {
       })
       .filter((text: string) => text.trim());
 
+    console.log('자막 추출 완료:', segments.length, '개의 세그먼트');
     return segments.join('\n');
   } catch (error) {
     console.error('YouTube 자막 가져오기 오류:', error);

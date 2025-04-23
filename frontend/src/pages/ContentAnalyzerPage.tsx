@@ -1,18 +1,92 @@
 // 📁 frontend/src/pages/ContentAnalyzerPage.tsx
-// Create at 2504232020 Ver13.0
+// Create at 2504232059 Ver14.0
 
 import React, { useState } from 'react';
+import api from '../utils/api-client';
 
 /**
- * 단순한 YouTube 자막 추출 페이지
- * API 키를 직접 하드코딩하여 테스트 (실제 프로덕션에서는 제거 필요)
+ * YouTube 자막 추출 페이지
+ * 백엔드 API를 통해 안전하게 자막 추출
  */
 const ContentAnalyzerPage: React.FC = () => {
   const [url, setUrl] = useState('');
   const [transcript, setTranscript] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [videoInfo, setVideoInfo] = useState<{id: string, title?: string} | null>(null);
 
+  // 자막 가져오기 함수 - 백엔드 API 사용
+  const getTranscript = async () => {
+    if (!url) {
+      setError('URL을 입력해주세요.');
+      return;
+    }
+    
+    // YouTube URL 검증
+    if (!url.includes('youtube.com/watch') && !url.includes('youtu.be/')) {
+      setError('유효한 YouTube URL이 아닙니다.');
+      return;
+    }
+    
+    setLoading(true);
+    setError(null);
+    setTranscript(null);
+    setVideoInfo(null);
+    
+    try {
+      // 백엔드 API 호출
+      console.log('백엔드 API 호출:', url);
+      const response = await api.get(`/youtube-transcript?url=${encodeURIComponent(url)}`);
+      
+      console.log('API 응답:', response.data);
+      
+      // 성공적으로 자막을 가져왔는지 확인
+      if (response.data && response.data.success && response.data.transcript) {
+        setTranscript(response.data.transcript);
+        
+        // 비디오 정보 설정
+        if (response.data.videoId) {
+          setVideoInfo({
+            id: response.data.videoId,
+            title: response.data.transcript.split('\n')[0]?.startsWith('#') 
+              ? response.data.transcript.split('\n')[0].substring(2) 
+              : undefined
+          });
+        }
+      } else {
+        throw new Error(response.data.message || '자막을 가져올 수 없습니다.');
+      }
+    } catch (error: any) {
+      console.error('자막 가져오기 오류:', error);
+      
+      // 오류 메시지 설정
+      const errorMessage = error.response?.data?.message || error.message || '자막을 가져오는 중 오류가 발생했습니다.';
+      setError(errorMessage);
+      
+      // 개발 환경에서 테스트용 더미 데이터 표시
+      if (process.env.NODE_ENV === 'development') {
+        console.log('개발 환경에서 더미 데이터 표시');
+        const videoId = extractVideoId(url);
+        setTranscript(`
+# 테스트 동영상 제목 (실제 API 호출 실패)
+
+URL: ${url}
+
+[0:00] 이것은 테스트용 더미 자막 텍스트입니다.
+[0:05] 백엔드 API 호출에 실패했습니다: ${errorMessage}
+[0:10] 실제 환경에서는 이 텍스트가 표시되지 않습니다.
+        `);
+        
+        setVideoInfo({
+          id: videoId || 'unknown',
+          title: '테스트 동영상 제목 (실제 API 호출 실패)'
+        });
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+  
   // YouTube ID 추출 함수
   const extractVideoId = (url: string): string | null => {
     try {
@@ -31,90 +105,6 @@ const ContentAnalyzerPage: React.FC = () => {
     } catch (error) {
       console.error('YouTube URL 파싱 오류:', error);
       return null;
-    }
-  };
-
-  // 자막 가져오기 함수 - 직접 테스트용
-  const getTranscript = async () => {
-    if (!url) {
-      setError('URL을 입력해주세요.');
-      return;
-    }
-    
-    // YouTube URL 검증
-    if (!url.includes('youtube.com/watch') && !url.includes('youtu.be/')) {
-      setError('유효한 YouTube URL이 아닙니다.');
-      return;
-    }
-    
-    setLoading(true);
-    setError(null);
-    setTranscript(null);
-    
-    try {
-      // 동영상 ID 가져오기
-      const videoId = extractVideoId(url);
-      if (!videoId) {
-        throw new Error('동영상 ID를 추출할 수 없습니다.');
-      }
-
-      console.log(`동영상 ID: ${videoId}`);
-      
-      // 테스트용 하드코딩 API 키 (실제 프로덕션에서는 제거 필요)
-      const apiKey = "AIzaSyDoen_D-fQhNCadioLmC5LixlB2dI1_xII";
-      
-      // 1. 비디오 정보 가져오기
-      const videoResponse = await fetch(
-        `https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${videoId}&key=${apiKey}`
-      );
-      
-      // API 응답 확인 (실패 시 오류 표시)
-      if (!videoResponse.ok) {
-        const errorData = await videoResponse.json();
-        throw new Error(`YouTube API 오류: ${errorData.error?.message || '알 수 없는 오류'}`);
-      }
-      
-      const videoData = await videoResponse.json();
-      
-      if (!videoData.items || videoData.items.length === 0) {
-        throw new Error('비디오 정보를 찾을 수 없습니다.');
-      }
-      
-      const videoTitle = videoData.items[0].snippet.title;
-      console.log(`비디오 제목: ${videoTitle}`);
-      
-      // 대체 방법: 자막이 없거나 접근할 수 없는 경우 간단한 정보만 표시
-      // YouTube API는 인증된 사용자만 자막 내용에 접근을 허용합니다.
-      setTranscript(`
-비디오 ID: ${videoId}
-제목: ${videoTitle}
-채널: ${videoData.items[0].snippet.channelTitle}
-업로드 날짜: ${new Date(videoData.items[0].snippet.publishedAt).toLocaleDateString()}
-설명: ${videoData.items[0].snippet.description.substring(0, 500)}${videoData.items[0].snippet.description.length > 500 ? '...' : ''}
-
-참고: YouTube API를 통해 자막 내용을 직접 다운로드하려면 OAuth 인증이 필요합니다.
-이 테스트에서는 비디오 정보만 표시합니다.
-      `);
-    } catch (error: any) {
-      console.error('YouTube API 오류:', error);
-      setError(error.message || '자막을 가져오는 중 오류가 발생했습니다.');
-      
-      // 오류 발생 시 테스트용 더미 데이터 표시
-      setTranscript(`
-테스트용 더미 자막 데이터입니다.
-실제 YouTube API 호출에 실패했습니다: ${error.message}
-
-00:00:01,000 --> 00:00:05,000
-안녕하세요, YouTube 동영상에 오신 것을 환영합니다.
-
-00:00:05,100 --> 00:00:10,000
-이 영상에서는 다양한 주제에 대해 이야기할 예정입니다.
-
-00:00:10,100 --> 00:00:15,000
-자막 추출 테스트를 위한 예시 텍스트입니다.
-      `);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -170,7 +160,9 @@ const ContentAnalyzerPage: React.FC = () => {
           {transcript && (
             <div className="mb-6">
               <div className="flex justify-between items-center mb-2">
-                <h3 className="text-lg font-semibold">추출된 자막</h3>
+                <h3 className="text-lg font-semibold">
+                  {videoInfo?.title ? `추출된 자막: ${videoInfo.title}` : '추출된 자막'}
+                </h3>
                 <div className="space-x-2">
                   <button
                     onClick={() => navigator.clipboard.writeText(transcript)}
@@ -184,7 +176,9 @@ const ContentAnalyzerPage: React.FC = () => {
                       const url = URL.createObjectURL(blob);
                       const a = document.createElement('a');
                       a.href = url;
-                      a.download = `youtube-transcript-${Date.now()}.txt`;
+                      a.download = videoInfo?.title 
+                        ? `${videoInfo.title.replace(/[^\w\s]/gi, '')}-transcript.txt`
+                        : `youtube-transcript-${Date.now()}.txt`;
                       document.body.appendChild(a);
                       a.click();
                       document.body.removeChild(a);
@@ -196,6 +190,21 @@ const ContentAnalyzerPage: React.FC = () => {
                   </button>
                 </div>
               </div>
+              
+              {/* 비디오 정보 표시 (선택적) */}
+              {videoInfo && (
+                <div className="mb-3 p-3 bg-blue-50 rounded-md">
+                  <a 
+                    href={`https://www.youtube.com/watch?v=${videoInfo.id}`} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:underline"
+                  >
+                    YouTube에서 보기
+                  </a>
+                </div>
+              )}
+              
               <div className="h-96 overflow-y-auto p-4 bg-gray-50 rounded border border-gray-200 whitespace-pre-wrap">
                 {transcript}
               </div>

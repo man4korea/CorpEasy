@@ -1,158 +1,169 @@
 // 📁 backend/services/youtubeContentService.ts
-// Create at 2504232245 Ver1.1
+// Create at 2504232055 Ver4.0
 
 import axios from 'axios';
-import { logger } from '../utils/logger';
+import cache from '../utils/cache';
 
 /**
- * 유튜브 콘텐츠 서비스
- * - 유튜브 영상 ID 추출
- * - 유튜브 자막 추출
- * - 유튜브 영상 정보 조회
+ * YouTube 콘텐츠 관련 서비스
+ * 자막 추출 기능 구현
  */
-export class YoutubeContentService {
+const youtubeContentService = {
   /**
-   * 유튜브 URL에서 영상 ID 추출
-   * @param url 유튜브 URL
-   * @returns 유튜브 영상 ID
-   */
-  static extractVideoId(url: string): string | null {
-    try {
-      const urlObj = new URL(url);
-
-      if (urlObj.hostname === 'youtu.be') {
-        return urlObj.pathname.substring(1);
-      }
-
-      if (urlObj.hostname.includes('youtube.com')) {
-        const searchParams = new URLSearchParams(urlObj.search);
-        return searchParams.get('v');
-      }
-
-      return null;
-    } catch (error) {
-      logger.error('유튜브 URL 파싱 오류:', error);
-      return null;
-    }
-  }
-
-  /**
-   * 유튜브 자막 추출
-   * @param videoId 유튜브 영상 ID
+   * YouTube 자막 가져오기
+   * 직접 YouTube 페이지에서 자막 데이터를 추출
+   * 
+   * @param videoId YouTube 동영상 ID
+   * @param useCache 캐시 사용 여부 (기본값: true)
    * @returns 자막 텍스트
    */
-  static async fetchTranscript(videoId: string): Promise<string> {
+  getYouTubeTranscript: async (videoId: string, useCache = true): Promise<string> => {
     try {
-      // 엔드포인트 경로 수정: youtube-transcript → youtube/transcript
-      const response = await axios.get(`${process.env.API_BASE_URL}/api/youtube/transcript?videoId=${videoId}`);
-
-      if (response.status !== 200 || !response.data) {
-        throw new Error(`자막 추출 실패: ${response.status}`);
-      }
-
-      // 응답 데이터 구조 처리 개선
-      if (response.data.success && response.data.data) {
-        // { success: true, data: ... } 구조 처리
-        const data = response.data.data;
-        if (typeof data === 'string') {
-          return data;
-        } else if (data.transcript) {
-          return data.transcript;
-        } else if (data.content) {
-          return data.content;
+      // 캐시 키 생성
+      const cacheKey = `youtube-transcript-${videoId}`;
+      
+      // 캐시 확인
+      if (useCache) {
+        const cachedData = await cache.get(cacheKey);
+        if (cachedData) {
+          console.log(`캐시에서 YouTube 자막 가져옴: ${videoId}`);
+          return cachedData as string;
         }
-      } else if (Array.isArray(response.data)) {
-        return response.data
-          .map((item: { text: string }) => item.text)
-          .join(' ')
-          .replace(/\s+/g, ' ');
-      } else if (typeof response.data === 'string') {
-        return response.data;
-      } else if (response.data.transcript) {
-        return response.data.transcript;
       }
-
-      throw new Error('자막 데이터 형식이 예상과 다릅니다.');
-    } catch (error) {
-      logger.error(`유튜브 자막 추출 오류 (videoId: ${videoId}):`, error);
-      throw new Error(`유튜브 자막을 추출할 수 없습니다: ${(error as Error).message}`);
-    }
-  }
-
-  /**
-   * 유튜브 영상 정보 조회
-   * @param videoId 유튜브 영상 ID
-   * @returns 영상 정보 (제목, 설명, 썸네일 등)
-   */
-  static async fetchVideoInfo(videoId: string): Promise<any> {
-    try {
-      if (!process.env.YOUTUBE_API_KEY) {
-        throw new Error('YouTube API 키가 설정되어 있지 않습니다.');
+      
+      // 먼저 동영상 정보 가져오기 (제목 등)
+      let videoTitle = '';
+      try {
+        const apiKey = process.env.YOUTUBE_API_KEY;
+        if (apiKey) {
+          const videoInfoResponse = await axios.get(
+            `https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${videoId}&key=${apiKey}`
+          );
+          
+          if (videoInfoResponse.data?.items?.length > 0) {
+            videoTitle = videoInfoResponse.data.items[0].snippet.title;
+          }
+        }
+      } catch (error) {
+        console.warn('YouTube API 동영상 정보 가져오기 실패:', error);
+        // 동영상 정보는 필수가 아니므로 계속 진행
       }
-
-      const response = await axios.get(`https://www.googleapis.com/youtube/v3/videos`, {
-        params: {
-          part: 'snippet,contentDetails,statistics',
-          id: videoId,
-          key: process.env.YOUTUBE_API_KEY
+      
+      // 방법 1: YouTube 페이지에서 직접 자막 데이터 추출
+      console.log(`YouTube 페이지에서 자막 가져오기 시도: ${videoId}`);
+      const response = await axios.get(`https://www.youtube.com/watch?v=${videoId}`, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
         }
       });
-
-      if (response.status !== 200 || !response.data || !response.data.items || response.data.items.length === 0) {
-        throw new Error(`영상 정보 조회 실패: ${response.status}`);
+      
+      const html = response.data;
+      
+      // 자막 트랙 찾기
+      const captionTracksMatch = html.match(/"captionTracks":\[(.*?)\]/);
+      if (!captionTracksMatch) {
+        throw new Error('자막 트랙을 찾을 수 없습니다.');
       }
-
-      return response.data.items[0];
-    } catch (error) {
-      logger.error(`유튜브 영상 정보 조회 오류 (videoId: ${videoId}):`, error);
-      throw new Error(`유튜브 영상 정보를 조회할 수 없습니다: ${(error as Error).message}`);
+      
+      const captionTracksJson = `[${captionTracksMatch[1]}]`;
+      const captionTracks = JSON.parse(captionTracksJson);
+      
+      // 한국어 자막 찾기 (없으면 영어, 아니면 첫 번째 자막)
+      const track = captionTracks.find((track: any) => 
+        track.languageCode === 'ko'
+      ) || captionTracks.find((track: any) => 
+        track.languageCode === 'en'
+      ) || captionTracks[0];
+      
+      if (!track || !track.baseUrl) {
+        throw new Error('사용 가능한 자막을 찾을 수 없습니다.');
+      }
+      
+      // 자막 URL에서 실제 자막 데이터 가져오기
+      console.log(`자막 URL에서 데이터 가져오기: ${track.baseUrl}`);
+      const transcriptResponse = await axios.get(track.baseUrl);
+      const transcriptXml = transcriptResponse.data;
+      
+      // 자막 XML 파싱
+      const textRegex = /<text[^>]*start="([^"]*)"[^>]*dur="([^"]*)"[^>]*>(.*?)<\/text>/g;
+      let match;
+      let formattedTranscript = '';
+      let timeIndex = 0;
+      
+      // 제목 추가 (있는 경우)
+      if (videoTitle) {
+        formattedTranscript += `# ${videoTitle}\n\n`;
+      }
+      
+      formattedTranscript += `URL: https://www.youtube.com/watch?v=${videoId}\n\n`;
+      
+      // 시간 정보와 함께 텍스트 추출
+      while ((match = textRegex.exec(transcriptXml)) !== null) {
+        const startTime = parseFloat(match[1]);
+        const duration = parseFloat(match[2]);
+        const text = decodeHtmlEntities(match[3]).trim();
+        
+        if (text) {
+          timeIndex++;
+          const formattedTime = formatTime(startTime);
+          formattedTranscript += `[${formattedTime}] ${text}\n`;
+        }
+      }
+      
+      // 자막이 추출되지 않은 경우
+      if (formattedTranscript === `URL: https://www.youtube.com/watch?v=${videoId}\n\n`) {
+        // 단순 텍스트만 추출 시도
+        const simpleTextRegex = /<text[^>]*>(.*?)<\/text>/g;
+        let simpleMatch;
+        
+        while ((simpleMatch = simpleTextRegex.exec(transcriptXml)) !== null) {
+          const text = decodeHtmlEntities(simpleMatch[1]).trim();
+          if (text) {
+            formattedTranscript += `${text}\n`;
+          }
+        }
+      }
+      
+      // 여전히 자막이 없는 경우
+      if (formattedTranscript === `URL: https://www.youtube.com/watch?v=${videoId}\n\n`) {
+        throw new Error('자막을 추출할 수 없습니다.');
+      }
+      
+      // 캐시에 저장 (1일)
+      if (useCache) {
+        await cache.set(cacheKey, formattedTranscript, 86400);
+      }
+      
+      return formattedTranscript;
+    } catch (error: any) {
+      console.error('YouTube 자막 가져오기 오류:', error);
+      throw error;
     }
   }
+};
 
-  /**
-   * 유튜브 콘텐츠 분석에 필요한 모든 정보 조회
-   * @param url 유튜브 URL
-   * @returns 영상 정보와 자막
-   */
-  static async getYoutubeContentData(url: string): Promise<{
-    videoId: string;
-    videoInfo: any;
-    transcript: string;
-  }> {
-    const videoId = this.extractVideoId(url);
-
-    if (!videoId) {
-      throw new Error('유효한 유튜브 URL이 아닙니다.');
-    }
-
-    const [videoInfo, transcript] = await Promise.all([
-      this.fetchVideoInfo(videoId),
-      this.fetchTranscript(videoId)
-    ]);
-
-    return {
-      videoId,
-      videoInfo,
-      transcript
-    };
+// 시간을 00:00:00 형식으로 변환하는 함수
+const formatTime = (seconds: number): string => {
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const secs = Math.floor(seconds % 60);
+  
+  if (hours > 0) {
+    return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  } else {
+    return `${minutes}:${secs.toString().padStart(2, '0')}`;
   }
+};
 
-  /**
-   * 유튜브 URL 유효성 검사
-   * @param url 유튜브 URL
-   * @returns 유효성 여부
-   */
-  static isValidYoutubeUrl(url: string): boolean {
-    try {
-      const videoId = this.extractVideoId(url);
-      return videoId !== null;
-    } catch (error) {
-      return false;
-    }
-  }
-}
+// HTML 엔티티 디코딩 함수
+const decodeHtmlEntities = (text: string): string => {
+  return text
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&#(\d+);/g, (match, dec) => String.fromCharCode(dec));
+};
 
-// ✅ 이 부분이 새로 추가됨!
-export const getYoutubeContent = YoutubeContentService.getYoutubeContentData;
-
-export default YoutubeContentService;
+export default youtubeContentService;

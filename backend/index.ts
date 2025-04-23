@@ -65,6 +65,7 @@ async function initializeServer() {
           'http://localhost:5173',
           'http://127.0.0.1:5173',
           'https://corpeasy-dev.web.app',
+          'https://corpeasy-dev.firebaseapp.com',
           process.env.CORS_ALLOWED_ORIGINS
         ].filter(Boolean);
         
@@ -77,8 +78,9 @@ async function initializeServer() {
         }
       },
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-      allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'],
-      credentials: true
+      allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization', 'Access-Control-Allow-Origin'],
+      credentials: true,
+      maxAge: 86400 // 24시간 동안 preflight 요청 결과를 캐시
     }));
     
     // 정적 파일 서비스

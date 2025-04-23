@@ -626,27 +626,77 @@ const ContentAnalyzerPage: React.FC = () => {
           
           {/* 파일 업로드 폼 */}
           {activeTab === 'file' && (
-            <div className="mb-4">
-              <div className="mb-4">
-                <input
-                  type="file"
-                  onChange={handleFileChange}
-                  accept=".txt,.doc,.docx,.pdf,.md"
-                  className="block w-full text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                />
-                <p className="mt-1 text-sm text-gray-500">지원 형식: TXT, DOC, DOCX, PDF, MD (최대 10MB)</p>
-              </div>
-              
-              <button
-                onClick={handleFileUpload}
-                disabled={isLoading || !file}
-                className={`px-6 py-2 rounded-md font-medium ${
-                  isLoading || !file
-                    ? 'bg-blue-300 text-white cursor-not-allowed'
-                    : 'bg-blue-500 text-white hover:bg-blue-600'
-                }`}
-              >
-                {isLoading ? '분석중...' : '파일 분석하기'}
-              </button>
-            </div>
-          )}
+            // 📁 frontend/src/pages/ContentAnalyzerPage.tsx
+// 파일 끝 부분 수정 (650-655 라인)
+
+<div className="mb-4">
+<div className="mb-4">
+  <input
+    type="file"
+    onChange={handleFileChange}
+    accept=".txt,.doc,.docx,.pdf,.md"
+    className="block w-full text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+  />
+  <p className="mt-1 text-sm text-gray-500">지원 형식: TXT, DOC, DOCX, PDF, MD (최대 10MB)</p>
+</div>
+
+<button
+  onClick={handleFileUpload}
+  disabled={isLoading || !file}
+  className={`px-6 py-2 rounded-md font-medium ${
+    isLoading || !file
+      ? 'bg-blue-300 text-white cursor-not-allowed'
+      : 'bg-blue-500 text-white hover:bg-blue-600'
+  }`}
+>
+  {isLoading ? '분석중...' : '파일 분석하기'}
+</button>
+</div>
+)}
+
+{/* YouTube 자막 표시 */}
+{showTranscript && transcript && (
+<div className="mt-6 bg-white rounded-lg shadow-md p-6">
+<h2 className="text-xl font-semibold mb-4">YouTube 자막</h2>
+<div className="whitespace-pre-wrap bg-gray-50 p-4 rounded border border-gray-200 max-h-96 overflow-y-auto">
+  {transcript}
+</div>
+<div className="mt-4 flex justify-between">
+  <button
+    onClick={() => setShowTranscript(false)}
+    className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-100"
+  >
+    닫기
+  </button>
+  <button
+    onClick={() => analyzeTranscript(transcript)}
+    className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+  >
+    자막으로 분석하기
+  </button>
+</div>
+</div>
+)}
+
+{/* 오류 메시지 */}
+{error && (
+<div className="p-4 bg-red-50 text-red-700 rounded-md mb-4">
+{error}
+</div>
+)}
+
+{/* 로딩 표시 */}
+{isLoading && (
+<div className="bg-gray-50 rounded-md p-8 flex flex-col items-center justify-center">
+<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mb-4"></div>
+<p className="text-gray-600">처리 중입니다. 잠시만 기다려주세요...</p>
+<p className="text-gray-500 text-sm mt-2">콘텐츠 길이에 따라 최대 1분 정도 소요될 수 있습니다.</p>
+</div>
+)}
+</div>
+</div>
+</Layout>
+);
+};
+
+export default ContentAnalyzerPage;

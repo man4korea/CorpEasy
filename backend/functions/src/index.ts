@@ -65,37 +65,52 @@ function extractYouTubeVideoId(url: string): string | null {
   return videoId;
 }
 
-// YouTube 자막 가져오기 함수
-async function fetchYouTubeTranscript(videoId: string): Promise<string> {
+// YouTube 자막 추출 함수
+async function getYouTubeTranscript(videoId: string): Promise<string> {
   try {
     console.log(`YouTube 자막 가져오기 시작: 비디오 ID ${videoId}`);
     
-    // YouTube 자막 API를 사용하여 실제 자막 가져오기
-    const transcriptList = await YoutubeTranscript.fetchTranscript(videoId, {
-      lang: 'ko',  // 한국어 자막 우선
-      country: 'KR'
-    }).catch(() => {
-      // 한국어 자막이 없으면 기본 자막 시도
-      return YoutubeTranscript.fetchTranscript(videoId);
-    });
-    
-    if (!transcriptList || transcriptList.length === 0) {
-      throw new Error('자막을 찾을 수 없습니다.');
+    // YouTube 페이지의 HTML 가져오기
+    const pageResponse = await axios.get(`https://www.youtube.com/watch?v=${videoId}`);
+    const pageText = pageResponse.data;
+
+    // HTML에서 자막 트랙 정보 추출
+    const captionTracksMatch = pageText.match(/"captionTracks":\[(.*?)\]/);
+    if (!captionTracksMatch) {
+      throw new Error('자막 트랙을 찾을 수 없습니다.');
     }
 
-    // 비디오 제목 가져오기 (옵션)
-    const videoTitle = `# YouTube 자막\n\n`;
+    const tracks = JSON.parse(`[${captionTracksMatch[1]}]`);
 
-    // 자막 포맷팅
-    const formattedTranscript = transcriptList
-      .map(item => {
-        const minutes = Math.floor(item.offset / 60000);
-        const seconds = Math.floor((item.offset % 60000) / 1000);
-        return `[${minutes}:${seconds.toString().padStart(2, '0')}] ${item.text}`;
+    // 한국어 자막 우선 시도
+    const koreanTrack = tracks.find((track: any) => 
+      track.languageCode === 'ko' && 
+      (track.kind === 'asr' || track.kind === 'standard')
+    );
+
+    const selectedTrack = koreanTrack || tracks[0]; // 한국어 없으면 첫 번째 자막
+    if (!selectedTrack) {
+      throw new Error('사용 가능한 자막이 없습니다.');
+    }
+
+    // 자막 데이터 가져오기
+    const transcriptUrl = selectedTrack.baseUrl + '&fmt=json3';
+    const transcriptResponse = await axios.get(transcriptUrl);
+    const transcriptData = transcriptResponse.data;
+
+    // 자막 텍스트 추출 및 포맷팅
+    const segments = transcriptData.events
+      .filter((event: any) => event.segs && event.segs.length > 0)
+      .map((event: any) => {
+        const startTime = Math.floor(event.tStartMs / 1000);
+        const minutes = Math.floor(startTime / 60);
+        const seconds = startTime % 60;
+        const text = event.segs.map((seg: any) => seg.utf8).join('').trim();
+        return `[${minutes}:${seconds.toString().padStart(2, '0')}] ${text}`;
       })
-      .join('\n');
-    
-    return videoTitle + formattedTranscript;
+      .filter((text: string) => text.trim());
+
+    return segments.join('\n');
   } catch (error) {
     console.error('YouTube 자막 가져오기 오류:', error);
     throw new Error(`자막을 가져오는 중 오류가 발생했습니다: ${error.message}`);
@@ -153,7 +168,7 @@ app.post('/analyze/content', authMiddleware, (req, res) => {
   }
 });
 
-// YouTube 자막 가져오기 엔드포인트 (GET 메서드로 추가)
+// YouTube 자막 가져오기 엔드포인트 (GET 메서드)
 app.get('/api/youtube-transcript', authMiddleware, async (req, res) => {
   try {
     const { url } = req.query;
@@ -166,7 +181,7 @@ app.get('/api/youtube-transcript', authMiddleware, async (req, res) => {
     }
     
     // YouTube URL 검증
-    if (!url.toString().includes('youtube.com') && !url.toString().includes('youtu.be')) {
+    if (!url.toString().includes('youtube.com/watch') && !url.toString().includes('youtu.be/')) {
       return res.status(400).json({
         success: false,
         message: '유효한 YouTube URL이 아닙니다.',
@@ -185,8 +200,8 @@ app.get('/api/youtube-transcript', authMiddleware, async (req, res) => {
       });
     }
     
-    // YouTube 자막 가져오기
-    const transcript = await fetchYouTubeTranscript(videoId);
+    // 새로운 방식으로 자막 가져오기
+    const transcript = await getYouTubeTranscript(videoId);
     
     return res.status(200).json({
       success: true,
@@ -198,7 +213,7 @@ app.get('/api/youtube-transcript', authMiddleware, async (req, res) => {
     
     return res.status(500).json({
       success: false,
-      message: `YouTube 자막 가져오기 중 오류가 발생했습니다: ${error.message}`,
+      message: error.message || 'YouTube 자막 가져오기 중 오류가 발생했습니다.',
     });
   }
 });

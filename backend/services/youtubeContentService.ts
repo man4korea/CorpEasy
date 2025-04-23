@@ -2,13 +2,32 @@
 // Create at 2504232055 Ver4.0
 
 import axios from 'axios';
-import cache from '../utils/cache';
+import { cache } from '../utils/cache-factory';
 
 /**
  * YouTube 콘텐츠 관련 서비스
  * 자막 추출 기능 구현
  */
-const youtubeContentService = {
+export class YoutubeContentService {
+  /**
+   * YouTube URL이 유효한지 확인
+   * @param url 확인할 URL
+   * @returns 유효성 여부
+   */
+  static isValidYoutubeUrl(url: string): boolean {
+    try {
+      const urlObj = new URL(url);
+      const hostname = urlObj.hostname.toLowerCase();
+      return (
+        hostname === 'youtube.com' ||
+        hostname === 'www.youtube.com' ||
+        hostname === 'youtu.be'
+      );
+    } catch {
+      return false;
+    }
+  }
+
   /**
    * YouTube 자막 가져오기
    * 직접 YouTube 페이지에서 자막 데이터를 추출
@@ -17,7 +36,7 @@ const youtubeContentService = {
    * @param useCache 캐시 사용 여부 (기본값: true)
    * @returns 자막 텍스트
    */
-  getYouTubeTranscript: async (videoId: string, useCache = true): Promise<string> => {
+  async getYouTubeTranscript(videoId: string, useCache = true): Promise<string> {
     try {
       // 캐시 키 생성
       const cacheKey = `youtube-transcript-${videoId}`;
@@ -101,11 +120,11 @@ const youtubeContentService = {
       while ((match = textRegex.exec(transcriptXml)) !== null) {
         const startTime = parseFloat(match[1]);
         const duration = parseFloat(match[2]);
-        const text = decodeHtmlEntities(match[3]).trim();
+        const text = this.decodeHtmlEntities(match[3]).trim();
         
         if (text) {
           timeIndex++;
-          const formattedTime = formatTime(startTime);
+          const formattedTime = this.formatTime(startTime);
           formattedTranscript += `[${formattedTime}] ${text}\n`;
         }
       }
@@ -117,7 +136,7 @@ const youtubeContentService = {
         let simpleMatch;
         
         while ((simpleMatch = simpleTextRegex.exec(transcriptXml)) !== null) {
-          const text = decodeHtmlEntities(simpleMatch[1]).trim();
+          const text = this.decodeHtmlEntities(simpleMatch[1]).trim();
           if (text) {
             formattedTranscript += `${text}\n`;
           }
@@ -131,7 +150,7 @@ const youtubeContentService = {
       
       // 캐시에 저장 (1일)
       if (useCache) {
-        await cache.set(cacheKey, formattedTranscript, 86400);
+        await cache.set(cacheKey, formattedTranscript, { ttl: 86400 });
       }
       
       return formattedTranscript;
@@ -140,30 +159,31 @@ const youtubeContentService = {
       throw error;
     }
   }
-};
 
-// 시간을 00:00:00 형식으로 변환하는 함수
-const formatTime = (seconds: number): string => {
-  const hours = Math.floor(seconds / 3600);
-  const minutes = Math.floor((seconds % 3600) / 60);
-  const secs = Math.floor(seconds % 60);
-  
-  if (hours > 0) {
-    return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  } else {
-    return `${minutes}:${secs.toString().padStart(2, '0')}`;
+  // 시간을 00:00:00 형식으로 변환하는 함수
+  private formatTime(seconds: number): string {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = Math.floor(seconds % 60);
+    
+    if (hours > 0) {
+      return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    } else {
+      return `${minutes}:${secs.toString().padStart(2, '0')}`;
+    }
   }
-};
 
-// HTML 엔티티 디코딩 함수
-const decodeHtmlEntities = (text: string): string => {
-  return text
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/&#(\d+);/g, (match, dec) => String.fromCharCode(dec));
-};
+  // HTML 엔티티 디코딩 함수
+  private decodeHtmlEntities(text: string): string {
+    return text
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/&#(\d+);/g, (match, dec) => String.fromCharCode(dec));
+  }
+}
 
-export default youtubeContentService;
+// 기본 인스턴스 export
+export default new YoutubeContentService();

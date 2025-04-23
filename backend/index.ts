@@ -147,9 +147,9 @@ async function initializeServer() {
       const cacheType = cache.getCurrentCacheType();
       logger.info(`캐시 시스템 초기화: ${cacheType}`);
       
-      // Redis 사용 중이지만 폴백 상태인 경우 경고 표시
-      if (cacheFactory.isUsingFallback && cacheFactory.isUsingFallback()) {
-        logger.warn('Redis 연결 실패로 메모리 캐시를 사용합니다.');
+      // Redis 연결 상태 확인
+      if (cacheType === 'memory') {
+        logger.warn('메모리 캐시를 사용 중입니다.');
       }
     } catch (cacheError) {
       logger.warn('캐시 초기화 중 오류 발생, 메모리 캐시를 사용합니다:', cacheError);
@@ -161,13 +161,13 @@ async function initializeServer() {
     app.get('/api/system/cache-status', (req, res) => {
       try {
         const cacheType = cache.getCurrentCacheType();
-        const isUsingFallback = cacheFactory.isUsingFallback && cacheFactory.isUsingFallback();
+        const isUsingMemoryCache = cacheType === 'memory';
         
         cache.getStats().then(stats => {
           res.json({
             status: 'ok',
             cacheType,
-            isUsingFallback,
+            isUsingMemoryCache,
             stats,
             timestamp: new Date().toISOString()
           });
@@ -175,7 +175,7 @@ async function initializeServer() {
           res.json({
             status: 'error',
             cacheType,
-            isUsingFallback,
+            isUsingMemoryCache,
             error: error.message,
             timestamp: new Date().toISOString()
           });
@@ -193,15 +193,41 @@ async function initializeServer() {
     // Redis 복구 시도 엔드포인트 추가
     app.post('/api/system/redis-recover', async (req, res) => {
       try {
-        const recovery = await cacheFactory.attemptRedisRecovery();
-        res.json({
-          success: recovery,
-          message: recovery ? 'Redis 연결이 복구되었습니다.' : 'Redis 연결 복구 실패',
-          cacheType: cache.getCurrentCacheType(),
-          timestamp: new Date().toISOString()
-        });
+        const currentType = cache.getCurrentCacheType();
+        const isMemoryCache = currentType === 'memory';
+        
+        if (!isMemoryCache) {
+          res.json({
+            success: true,
+            message: 'Redis가 이미 정상적으로 연결되어 있습니다.',
+            cacheType: currentType,
+            timestamp: new Date().toISOString()
+          });
+          return;
+        }
+
+        // Redis로 재연결 시도
+        try {
+          cacheFactory.resetCache('redis');
+          const newType = cache.getCurrentCacheType();
+          const success = newType === 'redis';
+          
+          res.json({
+            success,
+            message: success ? 'Redis 연결이 복구되었습니다.' : 'Redis 연결 복구 실패',
+            cacheType: newType,
+            timestamp: new Date().toISOString()
+          });
+        } catch (error) {
+          cacheFactory.resetCache('memory'); // 실패시 메모리 캐시로 폴백
+          res.status(500).json({
+            success: false,
+            error: error.message,
+            timestamp: new Date().toISOString()
+          });
+        }
       } catch (error) {
-        res.json({
+        res.status(500).json({
           success: false,
           error: error.message,
           timestamp: new Date().toISOString()
@@ -241,76 +267,51 @@ async function initializeServer() {
       });
     });
     
-    // 공통 오류 처리 미들웨어 설정
+    // 에러 처리 미들웨어 설정
     setupErrorHandling(app);
-    
+
     // 서버 시작
     const server = app.listen(PORT, () => {
-      logger.info(`✅ AI API 서버 실행 중: http://localhost:${PORT}`);
-      logger.info(`모드: ${isDev ? '개발' : '프로덕션'}`);
-      
-      try {
-        logger.info(`캐시 타입: ${cache.getCurrentCacheType()}`);
-      } catch (e) {
-        logger.warn('캐시 타입 확인 실패, 기본 메모리 캐시 사용');
+      logger.info(`서버가 포트 ${PORT}에서 시작되었습니다.`);
+      if (isDev) {
+        logger.info('개발 모드로 실행 중입니다.');
       }
     });
 
-    // 종료 이벤트 핸들러 설정
-    setupShutdownHandlers(server);
-    
-    // Redis 자동 복구 시도 (10분마다)
-    if (!isDev) {
-      setInterval(async () => {
-        if (cacheFactory.isUsingFallback && cacheFactory.isUsingFallback()) {
-          logger.info('자동 Redis 복구 시도 중...');
-          const success = await cacheFactory.attemptRedisRecovery();
-          if (success) {
-            logger.info('Redis 연결 자동 복구 성공!');
-          }
-        }
-      }, 600000); // 10분
-    }
+    // 정상적인 서버 종료 처리
+    setupGracefulShutdown(server);
+
   } catch (error) {
-    logger.error('서버 초기화 오류:', error);
-    
-    // Redis 연결 실패 등 캐시 관련 오류는 서버 종료하지 않음
-    if (error.message && error.message.includes('Redis')) {
-      logger.warn('Redis 연결 실패로 메모리 캐시를 사용합니다.');
-      
-      // 메모리 캐시로 강제 전환 시도
-      try {
-        cacheFactory.resetCache('memory');
-        logger.info('메모리 캐시로 재설정 완료');
-        
-        // 서버 계속 실행 (재귀 호출 방지를 위해 initializeWithMemoryCache 사용)
-        initializeWithMemoryCache();
-      } catch (e) {
-        logger.error('메모리 캐시 초기화 실패:', e);
-        process.exit(1);
-      }
-    } else {
-      process.exit(1);
-    }
+    logger.error('서버 초기화 중 오류 발생:', error);
+    process.exit(1);
   }
 }
 
-/**
- * 메모리 캐시로 서버 초기화 
- * Redis 연결 실패 시 메모리 캐시만 사용하여 안전하게 서버 시작
- */
-async function initializeWithMemoryCache() {
-  try {
-    // 메모리 캐시 강제 설정
-    cacheFactory.resetCache('memory');
-    logger.info('메모리 캐시만 사용하여 서버를 시작합니다');
-    
-    // 서버 시작
-    const server = app.listen(PORT, () => {
-      logger.info(`✅ AI API 서버 실행 중 (메모리 캐시 모드): http://localhost:${PORT}`);
-      logger.info(`모드: ${isDev ? '개발' : '프로덕션'}`);
-      logger.info('캐시 타입: memory (forced fallback)');
-    });
-    
-    // 종료 이벤트 핸들러 설정
-    setupShutdownHandlers(server);
+// 정상적인 서버 종료를 위한 함수
+function setupGracefulShutdown(server: Server) {
+  process.on('SIGTERM', () => {
+    logger.info('SIGTERM 신호를 받았습니다. 서버를 정상적으로 종료합니다.');
+    gracefulShutdown(server);
+  });
+
+  process.on('SIGINT', () => {
+    logger.info('SIGINT 신호를 받았습니다. 서버를 정상적으로 종료합니다.');
+    gracefulShutdown(server);
+  });
+}
+
+function gracefulShutdown(server: Server) {
+  server.close(() => {
+    logger.info('서버가 모든 연결을 종료했습니다.');
+    process.exit(0);
+  });
+
+  // 10초 후에도 종료되지 않으면 강제 종료
+  setTimeout(() => {
+    logger.error('정상적인 종료가 실패했습니다. 강제 종료합니다.');
+    process.exit(1);
+  }, 10000);
+}
+
+// 서버 초기화 실행
+initializeServer();

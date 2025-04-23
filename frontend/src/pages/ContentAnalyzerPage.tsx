@@ -34,9 +34,9 @@ const ContentAnalyzerPage: React.FC = () => {
     setVideoInfo(null);
     
     try {
-      // 백엔드 API 호출
+      // 백엔드 API 호출 (api 경로 제거)
       console.log('백엔드 API 호출:', url);
-      const response = await api.get(`/api/youtube-transcript?url=${encodeURIComponent(url)}`);
+      const response = await api.get(`/youtube-transcript?url=${encodeURIComponent(url)}`);
       
       console.log('API 응답:', response.data);
       
@@ -58,7 +58,10 @@ const ContentAnalyzerPage: React.FC = () => {
       }
     } catch (error: any) {
       console.error('자막 가져오기 오류:', error);
-      setError(error.response?.data?.message || error.message || '자막을 가져오는 중 오류가 발생했습니다.');
+      // 상세 에러 메시지 표시
+      const errorMessage = error.response?.data?.message || error.message;
+      console.log('상세 에러:', errorMessage);
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }

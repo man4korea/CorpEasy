@@ -291,7 +291,7 @@ app.get('/youtube-transcript', authMiddleware, async (req, res) => {
     const { url } = req.query;
     
     if (!url) {
-      return res.status(400).json({
+      return res.status(200).json({
         success: false,
         message: 'YouTube URL이 필요합니다.',
       });
@@ -299,7 +299,7 @@ app.get('/youtube-transcript', authMiddleware, async (req, res) => {
     
     // YouTube URL 검증
     if (!url.toString().includes('youtube.com/watch') && !url.toString().includes('youtu.be/')) {
-      return res.status(400).json({
+      return res.status(200).json({
         success: false,
         message: '유효한 YouTube URL이 아닙니다.',
       });
@@ -311,26 +311,36 @@ app.get('/youtube-transcript', authMiddleware, async (req, res) => {
     const videoId = extractYouTubeVideoId(url.toString());
     
     if (!videoId) {
-      return res.status(400).json({
+      return res.status(200).json({
         success: false,
         message: 'YouTube 비디오 ID를 추출할 수 없습니다.',
       });
     }
     
-    // 자막 가져오기
-    const transcript = await getYouTubeTranscript(videoId);
-    
-    return res.status(200).json({
-      success: true,
-      videoId,
-      transcript,
-    });
+    try {
+      // 자막 가져오기
+      const transcript = await getYouTubeTranscript(videoId);
+      
+      return res.status(200).json({
+        success: true,
+        videoId,
+        transcript,
+      });
+    } catch (transcriptError: any) {
+      // 자막 가져오기 실패 시 200 응답으로 에러 전달
+      return res.status(200).json({
+        success: false,
+        videoId,
+        message: transcriptError.message,
+      });
+    }
   } catch (error: any) {
     console.error('YouTube 자막 가져오기 오류:', error);
     
+    // 서버 에러일 경우에만 500 응답
     return res.status(500).json({
       success: false,
-      message: error.message || 'YouTube 자막 가져오기 중 오류가 발생했습니다.',
+      message: '서버 내부 오류가 발생했습니다.',
     });
   }
 });

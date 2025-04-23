@@ -63,6 +63,7 @@ apiClient.interceptors.request.use(
       // URL이 외부 도메인인 경우 처리하지 않음
       if (!config.url.startsWith('http')) {
         config.url = getApiPath(config.url);
+      console.log('최종 요청 URL:', config.url);
       }
     }
     

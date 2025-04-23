@@ -1,5 +1,5 @@
 // 📁 backend/routes/analyze-router.ts
-// Create at 2504211710 Ver1.3
+// Create at 2504232300 Ver1.4
 
 import express from 'express';
 import { ContentAnalysisService } from '../services/contentAnalysisService';
@@ -63,8 +63,56 @@ router.use((req, res, next) => {
  */
 router.post('/content', async (req, res) => {
   try {
-    const { input } = req.body;
+    // 요청 본문 로깅 (디버깅용)
+    logger.info(`콘텐츠 분석 요청 받음: ${JSON.stringify(req.body).substring(0, 200)}...`);
     
+    // 두 가지 요청 형식 지원
+    // 1. { input: string } - 기존 방식
+    // 2. { url: string, type: string, extractTranscript?: boolean } - 클라이언트 방식
+    
+    let input = req.body.input;
+    const { url, type, extractTranscript } = req.body;
+    
+    // url & type이 있는 경우 새로운 형식으로 처리
+    if (url && type) {
+      logger.info(`새 형식 요청 감지: url=${url}, type=${type}, extractTranscript=${extractTranscript}`);
+      
+      // YouTube 유형 + 자막 추출 요청인 경우
+      if (type === 'youtube' && extractTranscript === true) {
+        try {
+          logger.info(`YouTube 자막 추출 시도: ${url}`);
+          
+          // YouTube 자막 API 직접 호출
+          // 참고: 클라이언트에서는 /youtube-transcript 호출 (리디렉션은 index.ts에 설정되어 있음)
+          const youtubeData = await YoutubeContentService.getYoutubeContentData(url);
+          
+          logger.info(`YouTube 자막 추출 성공: videoId=${youtubeData.videoId}`);
+          
+          // 자막 데이터만 반환 (브라우저 클라이언트와 호환)
+          return res.status(200).json({
+            success: true,
+            transcript: youtubeData.transcript,
+            videoInfo: {
+              title: youtubeData.videoInfo.snippet.title,
+              description: youtubeData.videoInfo.snippet.description,
+              channelTitle: youtubeData.videoInfo.snippet.channelTitle,
+              publishedAt: youtubeData.videoInfo.snippet.publishedAt
+            }
+          });
+        } catch (youtubeError) {
+          logger.error(`YouTube 자막 추출 오류:`, youtubeError);
+          return res.status(500).json({
+            success: false,
+            message: `YouTube 자막 추출 중 오류가 발생했습니다: ${youtubeError.message || 'Unknown error'}`
+          });
+        }
+      }
+      
+      // 다른 url 기반 분석 요청인 경우
+      input = url; // url을 input으로 사용
+    }
+    
+    // input 검사 (어떤 형식이든 최종적으로 input이 필요)
     if (!input) {
       return res.status(400).json({
         success: false,
@@ -72,7 +120,7 @@ router.post('/content', async (req, res) => {
       });
     }
     
-    logger.info(`콘텐츠 분석 요청 수신: ${input.substring(0, 50)}...`);
+    logger.info(`콘텐츠 분석 처리 시작: ${input.substring(0, 50)}...`);
     
     // 콘텐츠 분석 수행
     const analysisId = await contentAnalysisService.analyzeContent(input);

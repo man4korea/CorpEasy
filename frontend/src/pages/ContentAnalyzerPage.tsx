@@ -1,11 +1,11 @@
 // 📁 frontend/src/pages/ContentAnalyzerPage.tsx
-// Create at 2504231845 Ver9.0
+// Create at 2504231913 Ver10.0
 
 import React, { useState } from 'react';
 
 /**
  * 단순한 YouTube 자막 추출 페이지
- * content.js의 로직을 참고하여 자막만 추출하여 표시
+ * CORS 프록시를 사용하여 YouTube 자막 추출
  */
 const ContentAnalyzerPage: React.FC = () => {
   const [url, setUrl] = useState('');
@@ -34,7 +34,10 @@ const ContentAnalyzerPage: React.FC = () => {
     }
   };
 
-  // 자막 가져오기 함수 - content.js 참고
+  // 공개 CORS 프록시 URL
+  const corsProxyUrl = 'https://corsproxy.io/?';
+
+  // 자막 가져오기 함수
   const getTranscript = async () => {
     if (!url) {
       setError('URL을 입력해주세요.');
@@ -60,17 +63,26 @@ const ContentAnalyzerPage: React.FC = () => {
 
       console.log(`동영상 ID: ${videoId}`);
       
-      // YouTube 페이지에서 자막 정보 가져오기 - content.js 방식 사용
-      const pageResponse = await fetch(`https://www.youtube.com/watch?v=${videoId}`);
+      // CORS 프록시를 사용하여 YouTube 페이지 가져오기
+      const youtubeUrl = `https://www.youtube.com/watch?v=${videoId}`;
+      const encodedYoutubeUrl = encodeURIComponent(youtubeUrl);
+      const proxyUrl = `${corsProxyUrl}${encodedYoutubeUrl}`;
+      
+      console.log(`프록시 URL: ${proxyUrl}`);
+      
+      const pageResponse = await fetch(proxyUrl);
       const pageText = await pageResponse.text();
 
+      console.log('YouTube 페이지 응답 수신');
+      
       // 자막 트랙 찾기
       const captionTracks = pageText.match(/"captionTracks":\[(.*?)\]/);
       if (!captionTracks) {
-        throw new Error('자막 트랙을 찾을 수 없습니다.');
+        throw new Error('자막 트랙을 찾을 수 없습니다. YouTube 페이지 응답 형식이 변경되었을 수 있습니다.');
       }
 
       const tracks = JSON.parse(`[${captionTracks[1]}]`);
+      console.log('자막 트랙:', tracks);
 
       // 한국어 자막 찾기 (없으면 영어 자막)
       const track = tracks.find((track: any) => 
@@ -83,12 +95,20 @@ const ContentAnalyzerPage: React.FC = () => {
         throw new Error('자막 트랙을 찾을 수 없습니다.');
       }
 
-      // 자막 URL 생성
+      console.log('선택된 자막 트랙:', track);
+
+      // 자막 URL 생성 및 CORS 프록시 사용
       const transcriptUrl = track.baseUrl;
+      const encodedTranscriptUrl = encodeURIComponent(transcriptUrl);
+      const proxyTranscriptUrl = `${corsProxyUrl}${encodedTranscriptUrl}`;
+      
+      console.log(`자막 프록시 URL: ${proxyTranscriptUrl}`);
       
       // 자막 가져오기
-      const transcriptResponse = await fetch(transcriptUrl);
+      const transcriptResponse = await fetch(proxyTranscriptUrl);
       const xmlData = await transcriptResponse.text();
+      
+      console.log('자막 XML 응답 수신');
       
       // XML 파싱
       const parser = new DOMParser();
@@ -96,9 +116,16 @@ const ContentAnalyzerPage: React.FC = () => {
       
       // 텍스트 노드 추출
       const textNodes = Array.from(xmlDoc.getElementsByTagName('text'));
+      console.log(`추출된 텍스트 노드 수: ${textNodes.length}`);
+      
       const lines = textNodes.map(node => node.textContent).filter(Boolean);
       
+      if (lines.length === 0) {
+        throw new Error('자막 내용이 비어 있습니다.');
+      }
+      
       setTranscript(lines.join('\n'));
+      console.log('자막 추출 완료');
       
     } catch (error: any) {
       console.error('자막 가져오기 오류:', error);

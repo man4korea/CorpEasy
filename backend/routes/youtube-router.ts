@@ -8,11 +8,11 @@ const router = express.Router();
 
 /**
  * YouTube 자막 가져오기 API
- * GET /api/youtube-transcript?url=<YOUTUBE_URL>
+ * GET /api/youtube/transcript?url=<YOUTUBE_URL>
  * 또는
- * GET /api/youtube-transcript?videoId=<VIDEO_ID>
+ * GET /api/youtube/transcript?videoId=<VIDEO_ID>
  */
-router.get('/youtube-transcript', async (req: Request, res: Response) => {
+router.get('/transcript', async (req: Request, res: Response) => {
   try {
     const { url, videoId: directVideoId } = req.query;
     let videoId: string | null = null;

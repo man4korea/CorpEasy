@@ -141,7 +141,7 @@ app.post('/analyze/content', authMiddleware, (req, res) => {
 });
 
 // YouTube 자막 가져오기 엔드포인트 (GET 메서드로 추가)
-app.get('/api/youtube-transcript', authMiddleware, async (req, res) => {
+app.get('/youtube-transcript', authMiddleware, async (req, res) => {
   try {
     const { url } = req.query;
     

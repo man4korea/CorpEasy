@@ -1,5 +1,5 @@
 // 📁 frontend/src/pages/ContentAnalyzerPage.tsx
-// Create at 2504232145 Ver3.1
+// Create at 2504232350 Ver4.0
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -24,107 +24,80 @@ const ContentAnalyzerPage: React.FC = () => {
   const [transcript, setTranscript] = useState<string | null>(null);
   const [showTranscript, setShowTranscript] = useState(false);
 
-  // YouTube 자막 가져오기 함수
+  // YouTube 자막 가져오기 함수 - 직접 텍스트 추출
   const fetchYouTubeTranscript = async (url: string) => {
     setIsLoading(true);
     setError(null);
     setTranscript(null);
     
     try {
-      // API 기본 URL 가져오기 - 환경 변수만 사용하도록 수정
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
-      
-      console.log(`YouTube 자막 API 호출: ${API_BASE_URL}/api/youtube/transcript`);
-      
-      // 올바른 YouTube 자막 API 엔드포인트로 수정 (youtube-transcript → youtube/transcript)
-      const response = await axios.get(`${API_BASE_URL}/api/youtube/transcript`, { 
-        params: { url }
+      // 유효한 YouTube URL인지 확인
+      if (!url.includes('youtube.com/watch') && !url.includes('youtu.be/')) {
+        throw new Error('유효한 YouTube URL이 아닙니다');
+      }
+
+      // Video ID 추출
+      let videoId = '';
+      if (url.includes('youtube.com/watch')) {
+        const urlParams = new URLSearchParams(new URL(url).search);
+        videoId = urlParams.get('v') || '';
+      } else if (url.includes('youtu.be/')) {
+        videoId = url.split('youtu.be/')[1].split(/[?#]/)[0];
+      }
+
+      if (!videoId) {
+        throw new Error('YouTube 비디오 ID를 추출할 수 없습니다');
+      }
+
+      console.log(`YouTube 비디오 ID 추출: ${videoId}`);
+
+      // 원래의 환경 변수 기반 API URL 대신 현재 도메인 기준으로 API URL 생성
+      // 배포 환경에서 상대 경로로 API 호출하도록 변경
+      const apiUrl = '/api/youtube/transcript';
+      console.log(`YouTube 자막 API 호출: ${apiUrl}`);
+
+      // 서버에 요청 보내기 (GET 요청, videoId 쿼리 파라미터)
+      const response = await axios.get(apiUrl, {
+        params: { videoId }
       });
-      
+
       console.log('API 응답:', response.data);
       
-      if (response.data) {
-        // 자막 텍스트 처리
-        let transcriptText = '';
-        
-        // 구조화된 응답인 경우의 다양한 패턴 처리
-        if (response.data.data && response.data.data.transcript) {
-          // { data: { transcript: "..." } } 구조
-          transcriptText = response.data.data.transcript;
-        } else if (response.data.success && response.data.data) {
-          // { success: true, data: ... } 구조 (일반적인 API 응답)
-          const data = response.data.data;
-          if (typeof data === 'string') {
-            transcriptText = data;
-          } else if (data.transcript) {
-            transcriptText = data.transcript;
-          } else if (data.content) {
-            transcriptText = data.content;
-          }
-        } else if (Array.isArray(response.data)) {
-          // 배열 형태로 반환된 경우 (각 항목에 text 필드가 있는 경우)
-          transcriptText = response.data
-            .map((item: { text: string }) => item.text)
-            .join(' ')
-            .replace(/\s+/g, ' ');
-        } else if (typeof response.data === 'string') {
-          // 문자열로 바로 반환된 경우
-          transcriptText = response.data;
-        } else if (response.data.transcript) {
-          // transcript 필드에 문자열이 있는 경우
-          transcriptText = response.data.transcript;
-        } else if (response.data.content) {
-          // content 필드에 문자열이 있는 경우
-          transcriptText = response.data.content;
+      // 응답 처리
+      if (response.data && response.data.success && response.data.data) {
+        // 새로운 응답 구조 처리 (success + data 패턴)
+        const data = response.data.data;
+        if (data.transcript) {
+          setTranscript(data.transcript);
+          setShowTranscript(true);
         } else {
-          console.error('응답 구조:', response.data);
-          throw new Error('자막 데이터 형식이 예상과 다릅니다.');
+          throw new Error('자막 데이터가 응답에 없습니다');
         }
-        
-        setTranscript(transcriptText);
+      } else if (response.data && response.data.transcript) {
+        // 이전 응답 구조 처리 (직접 transcript 필드)
+        setTranscript(response.data.transcript);
         setShowTranscript(true);
       } else {
-        throw new Error('자막 데이터를 가져올 수 없습니다.');
+        throw new Error('알 수 없는 응답 형식입니다');
       }
     } catch (err: any) {
       console.error("YouTube 자막 가져오기 오류:", err);
       
-      // 더 상세한 오류 정보 로깅
-      if (err.response) {
-        console.error("응답 상태:", err.response.status);
-        console.error("응답 헤더:", err.response.headers);
-        console.error("응답 데이터:", err.response.data);
-      } else if (err.request) {
-        console.error("요청 정보:", err.request);
+      // 자세한 오류 정보 로깅
+      if (axios.isAxiosError(err)) {
+        if (err.response) {
+          console.error("응답 상태:", err.response.status);
+          console.error("응답 데이터:", err.response.data);
+        } else if (err.request) {
+          console.error("요청은 전송되었지만 응답이 없음:", err.request);
+        } else {
+          console.error("요청 설정 중 오류 발생:", err.message);
+        }
       }
       
-      const errorMessage = err.response?.data?.message || err.message || "자막을 가져오는 중 오류가 발생했습니다.";
-      console.error("오류 메시지:", errorMessage);
-      
-      setError(errorMessage);
+      setError(err.response?.data?.message || err.message || "자막을 가져오는 중 오류가 발생했습니다. 네트워크 연결을 확인하세요.");
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  // YouTube 비디오 ID 추출 함수
-  const extractVideoId = (url: string): string | null => {
-    try {
-      const urlObj = new URL(url);
-
-      if (urlObj.hostname === 'youtu.be') {
-        return urlObj.pathname.substring(1);
-      }
-
-      if (urlObj.hostname.includes('youtube.com')) {
-        const searchParams = new URLSearchParams(urlObj.search);
-        return searchParams.get('v');
-      }
-
-      return null;
-    } catch (error) {
-      console.error('YouTube URL 파싱 오류:', error);
-      return null;
     }
   };
 

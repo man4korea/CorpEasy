@@ -1,11 +1,11 @@
 // 📁 frontend/src/pages/ContentAnalyzerPage.tsx
-// Create at 2504231930 Ver11.0
+// Create at 2504232020 Ver13.0
 
 import React, { useState } from 'react';
 
 /**
  * 단순한 YouTube 자막 추출 페이지
- * YouTube API를 활용한 자막 추출 구현
+ * API 키를 직접 하드코딩하여 테스트 (실제 프로덕션에서는 제거 필요)
  */
 const ContentAnalyzerPage: React.FC = () => {
   const [url, setUrl] = useState('');
@@ -34,7 +34,7 @@ const ContentAnalyzerPage: React.FC = () => {
     }
   };
 
-  // 자막 가져오기 함수
+  // 자막 가져오기 함수 - 직접 테스트용
   const getTranscript = async () => {
     if (!url) {
       setError('URL을 입력해주세요.');
@@ -60,17 +60,19 @@ const ContentAnalyzerPage: React.FC = () => {
 
       console.log(`동영상 ID: ${videoId}`);
       
-      // YouTube API 키 (.env 파일에서 가져옴)
-      const apiKey = import.meta.env.VITE_YOUTUBE_API_KEY;
-      
-      if (!apiKey) {
-        throw new Error('YouTube API 키가 설정되지 않았습니다.');
-      }
+      // 테스트용 하드코딩 API 키 (실제 프로덕션에서는 제거 필요)
+      const apiKey = "AIzaSyDoen_D-fQhNCadioLmC5LixlB2dI1_xII";
       
       // 1. 비디오 정보 가져오기
       const videoResponse = await fetch(
         `https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${videoId}&key=${apiKey}`
       );
+      
+      // API 응답 확인 (실패 시 오류 표시)
+      if (!videoResponse.ok) {
+        const errorData = await videoResponse.json();
+        throw new Error(`YouTube API 오류: ${errorData.error?.message || '알 수 없는 오류'}`);
+      }
       
       const videoData = await videoResponse.json();
       
@@ -78,58 +80,39 @@ const ContentAnalyzerPage: React.FC = () => {
         throw new Error('비디오 정보를 찾을 수 없습니다.');
       }
       
-      // 2. 자막 목록 가져오기
-      const captionsResponse = await fetch(
-        `https://www.googleapis.com/youtube/v3/captions?part=snippet&videoId=${videoId}&key=${apiKey}`
-      );
+      const videoTitle = videoData.items[0].snippet.title;
+      console.log(`비디오 제목: ${videoTitle}`);
       
-      const captionsData = await captionsResponse.json();
-      
-      if (!captionsData.items || captionsData.items.length === 0) {
-        throw new Error('이 동영상에는 자막이 없거나 자막에 접근할 수 없습니다.');
-      }
-      
-      // 한국어 자막 찾기 (없으면 영어 자막)
-      const caption = captionsData.items.find((item: any) => 
-        item.snippet.language === 'ko'
-      ) || captionsData.items.find((item: any) => 
-        item.snippet.language === 'en'
-      ) || captionsData.items[0];
-      
-      const captionId = caption.id;
-      
-      // 3. 자막 내용 가져오기
-      const transcriptResponse = await fetch(
-        `https://www.googleapis.com/youtube/v3/captions/${captionId}?key=${apiKey}`
-      );
-      
-      // API 응답 확인
-      if (!transcriptResponse.ok) {
-        // YouTube API는 직접 자막 콘텐츠 다운로드를 허용하지 않음을 안내
-        throw new Error('YouTube API를 통해 자막 콘텐츠를 직접 다운로드할 수 없습니다. 대체 방식으로 자막을 추출합니다.');
-      }
-      
-      const transcriptData = await transcriptResponse.text();
-      setTranscript(transcriptData);
-      
+      // 대체 방법: 자막이 없거나 접근할 수 없는 경우 간단한 정보만 표시
+      // YouTube API는 인증된 사용자만 자막 내용에 접근을 허용합니다.
+      setTranscript(`
+비디오 ID: ${videoId}
+제목: ${videoTitle}
+채널: ${videoData.items[0].snippet.channelTitle}
+업로드 날짜: ${new Date(videoData.items[0].snippet.publishedAt).toLocaleDateString()}
+설명: ${videoData.items[0].snippet.description.substring(0, 500)}${videoData.items[0].snippet.description.length > 500 ? '...' : ''}
+
+참고: YouTube API를 통해 자막 내용을 직접 다운로드하려면 OAuth 인증이 필요합니다.
+이 테스트에서는 비디오 정보만 표시합니다.
+      `);
     } catch (error: any) {
-      console.error('자막 가져오기 오류:', error);
+      console.error('YouTube API 오류:', error);
+      setError(error.message || '자막을 가져오는 중 오류가 발생했습니다.');
       
-      // 실패 시 대체 방법: 간단한 예시 자막 표시 (테스트용)
-      if (error.message.includes('YouTube API를 통해 자막 콘텐츠를 직접 다운로드할 수 없습니다')) {
-        setTranscript(`
-이 동영상에는 자막이 있지만, YouTube API는 자막 콘텐츠를 직접 다운로드할 권한을 제공하지 않습니다.
+      // 오류 발생 시 테스트용 더미 데이터 표시
+      setTranscript(`
+테스트용 더미 자막 데이터입니다.
+실제 YouTube API 호출에 실패했습니다: ${error.message}
 
-실제 구현에서는 다음과 같은 대안을 사용할 수 있습니다:
-1. 백엔드 서버를 통한 자막 추출
-2. YouTube 임베디드 플레이어의 자막 기능 활용
-3. 서드파티 서비스를 통한 자막 추출
+00:00:01,000 --> 00:00:05,000
+안녕하세요, YouTube 동영상에 오신 것을 환영합니다.
 
-현재 화면은 테스트 목적으로만 표시됩니다.
-        `);
-      } else {
-        setError(error.message || '자막을 가져오는 중 오류가 발생했습니다.');
-      }
+00:00:05,100 --> 00:00:10,000
+이 영상에서는 다양한 주제에 대해 이야기할 예정입니다.
+
+00:00:10,100 --> 00:00:15,000
+자막 추출 테스트를 위한 예시 텍스트입니다.
+      `);
     } finally {
       setLoading(false);
     }

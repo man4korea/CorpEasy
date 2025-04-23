@@ -1,5 +1,5 @@
 // 📁 backend/functions/src/index.ts
-// Create at 2504221915 Ver2.4
+// Create at 2504232150 Ver4.0 
 
 import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
@@ -8,7 +8,7 @@ import cors from 'cors';
 import compression from 'compression';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
-import axios from 'axios';
+import axios from 'axios'; // 이 import 추가 필요
 import { YoutubeTranscript } from 'youtube-transcript-api';
 
 // 환경 변수 설정
@@ -65,113 +65,152 @@ function extractYouTubeVideoId(url: string): string | null {
   return videoId;
 }
 
-// YouTube 자막 추출 함수
+// YouTube 자막 추출 함수 개선
 async function getYouTubeTranscript(videoId: string): Promise<string> {
   console.log(`YouTube 자막 가져오기 시작: 비디오 ID ${videoId}`);
   let captionsData = null;
-  let errorMessages = [];
+  let errorMessages: string[] = [];
 
-  // YouTube 페이지 가져오기
-  let pageText = '';
   try {
+    // 1. 방법 1: 직접 YouTube 페이지 요청
     console.log('YouTube 페이지 요청 시작');
     const pageResponse = await axios.get(`https://www.youtube.com/watch?v=${videoId}`, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
-        'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7'
-      }
+        'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7',
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache'
+      },
+      timeout: 10000 // 10초 타임아웃
     });
-    pageText = pageResponse.data;
-    console.log('YouTube 페이지 응답 받음');
-  } catch (error) {
-    console.log('YouTube 페이지 요청 실패:', error.message);
-    errorMessages.push(`페이지 요청 실패: ${error.message}`);
+    
+    const pageText = pageResponse.data;
+    console.log('YouTube 페이지 응답 받음, 길이:', pageText.length);
+
+    // 디버그: ytInitialPlayerResponse 찾기
+    if (pageText.includes('ytInitialPlayerResponse')) {
+      console.log('ytInitialPlayerResponse 발견됨');
+    } else {
+      console.log('ytInitialPlayerResponse 없음');
+    }
+
+    // 2. 다양한 패턴으로 자막 데이터 추출 시도
+    const patterns = [
+      /"captionTracks":\s*(\[.*?\])/,
+      /"playerCaptionsTracklistRenderer":\s*(\{.*?\})/,
+      /"captions":\s*(\{.*?\})/,
+      /ytInitialPlayerResponse\s*=\s*(\{.*?\});/
+    ];
+
+    for (const pattern of patterns) {
+      try {
+        const match = pageText.match(pattern);
+        if (match && match[1]) {
+          console.log(`패턴 매치 성공: ${pattern}`);
+          
+          let data;
+          try {
+            // JSON 파싱 시도
+            data = JSON.parse(match[1]);
+            console.log('JSON 파싱 성공:', typeof data);
+            
+            // 자막 트랙 찾기
+            let tracks: any[] = [];
+            
+            if (Array.isArray(data)) {
+              // 직접 captionTracks 배열인 경우
+              tracks = data;
+            } else if (data.captionTracks) {
+              // 객체 내부에 captionTracks 있는 경우
+              tracks = data.captionTracks;
+            } else if (data.playerCaptionsTracklistRenderer?.captionTracks) {
+              // 다른 구조
+              tracks = data.playerCaptionsTracklistRenderer.captionTracks;
+            }
+            
+            if (tracks.length > 0) {
+              console.log(`${tracks.length}개의 자막 트랙 발견`);
+              
+              // 한국어 자막 찾기 (없으면 첫 번째 자막 사용)
+              const koreanTrack = tracks.find((track: any) => 
+                track.languageCode === 'ko'
+              );
+              
+              const selectedTrack = koreanTrack || tracks[0];
+              
+              if (selectedTrack?.baseUrl) {
+                console.log('자막 URL 발견:', selectedTrack.baseUrl.substring(0, 50) + '...');
+                
+                try {
+                  // 자막 데이터 가져오기
+                  const captionResponse = await axios.get(selectedTrack.baseUrl, {
+                    timeout: 5000
+                  });
+                  
+                  captionsData = captionResponse.data;
+                  console.log('자막 데이터 가져오기 성공');
+                  
+                  // 데이터 형식 확인
+                  if (typeof captionsData === 'string') {
+                    console.log('자막 데이터는 문자열 형식, XML 파싱 필요');
+                  } else if (typeof captionsData === 'object') {
+                    console.log('자막 데이터는 객체 형식');
+                  }
+                  
+                  break; // 성공했으므로 반복 중단
+                } catch (captionError: any) {
+                  console.error('자막 URL 접근 오류:', captionError.message);
+                  errorMessages.push(`자막 URL 접근 오류: ${captionError.message}`);
+                }
+              }
+            }
+          } catch (jsonError: any) {
+            console.error('JSON 파싱 오류:', jsonError.message);
+            errorMessages.push(`JSON 파싱 오류: ${jsonError.message}`);
+          }
+        }
+      } catch (patternError: any) {
+        console.error('패턴 매치 오류:', patternError.message);
+        errorMessages.push(`패턴 매치 오류: ${patternError.message}`);
+      }
+    }
+  } catch (pageError: any) {
+    console.error('YouTube 페이지 요청 실패:', pageError.message);
+    errorMessages.push(`페이지 요청 실패: ${pageError.message}`);
   }
 
-  if (pageText) {
-    // 패턴 1: 일반 자막
-    if (!captionsData) {
-      try {
-        console.log('일반 자막 패턴 시도');
-        const pattern1 = /"captionTracks":\[(.*?)\]/;
-        const match1 = pageText.match(pattern1);
-        if (match1) {
-          console.log('일반 자막 패턴 발견');
-          const tracks = JSON.parse(`[${match1[1]}]`);
-          const koreanTrack = tracks.find((track: any) => 
-            track.languageCode === 'ko' && 
-            (track.kind === 'asr' || track.kind === 'standard')
-          );
-          const selectedTrack = koreanTrack || tracks[0];
-          if (selectedTrack?.baseUrl) {
-            const response = await axios.get(selectedTrack.baseUrl);
-            captionsData = response.data;
-            console.log('일반 자막 가져오기 성공');
-          }
+  // 3. 방법 2: YouTube Data API 사용 (API 키가 있는 경우)
+  if (!captionsData && process.env.YOUTUBE_API_KEY) {
+    try {
+      console.log('YouTube Data API 시도');
+      const apiKey = process.env.YOUTUBE_API_KEY;
+      
+      // 동영상 정보 가져오기
+      const videoInfoUrl = `https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${videoId}&key=${apiKey}`;
+      const videoInfoResponse = await axios.get(videoInfoUrl);
+      
+      if (videoInfoResponse.data?.items?.length > 0) {
+        const videoTitle = videoInfoResponse.data.items[0].snippet.title;
+        console.log('동영상 제목:', videoTitle);
+        
+        // 자막 트랙 목록 가져오기
+        const captionsUrl = `https://www.googleapis.com/youtube/v3/captions?part=snippet&videoId=${videoId}&key=${apiKey}`;
+        const captionsResponse = await axios.get(captionsUrl);
+        
+        if (captionsResponse.data?.items?.length > 0) {
+          console.log(`${captionsResponse.data.items.length}개의 자막 트랙 발견 (API)`);
+          
+          // 나중에 구현
+          // API로는 자막 파일 직접 다운로드가 제한됨
         }
-      } catch (error) {
-        console.log('일반 자막 처리 실패:', error.message);
-        errorMessages.push(`일반 자막 처리 실패: ${error.message}`);
       }
-    }
-
-    // 패턴 2: 자동 생성 자막
-    if (!captionsData) {
-      try {
-        console.log('자동 생성 자막 패턴 시도');
-        const pattern2 = /"playerCaptionsTracklistRenderer":\{(.*?)\}/;
-        const match2 = pageText.match(pattern2);
-        if (match2) {
-          console.log('자동 생성 자막 패턴 발견');
-          const trackData = JSON.parse(`{${match2[1]}}`);
-          if (trackData.captionTracks) {
-            const koreanTrack = trackData.captionTracks.find((track: any) => 
-              track.languageCode === 'ko'
-            );
-            const selectedTrack = koreanTrack || trackData.captionTracks[0];
-            if (selectedTrack?.baseUrl) {
-              const response = await axios.get(selectedTrack.baseUrl);
-              captionsData = response.data;
-              console.log('자동 생성 자막 가져오기 성공');
-            }
-          }
-        }
-      } catch (error) {
-        console.log('자동 생성 자막 처리 실패:', error.message);
-        errorMessages.push(`자동 생성 자막 처리 실패: ${error.message}`);
-      }
-    }
-
-    // 패턴 3: 새로운 형식의 자막
-    if (!captionsData) {
-      try {
-        console.log('새로운 형식 자막 패턴 시도');
-        const pattern3 = /"captions":\{(.*?)\}/;
-        const match3 = pageText.match(pattern3);
-        if (match3) {
-          console.log('새로운 형식 자막 패턴 발견');
-          const captionsInfo = JSON.parse(`{${match3[1]}}`);
-          const playerCaptionsTracklistRenderer = captionsInfo.playerCaptionsTracklistRenderer;
-          if (playerCaptionsTracklistRenderer?.captionTracks) {
-            const koreanTrack = playerCaptionsTracklistRenderer.captionTracks.find((track: any) => 
-              track.languageCode === 'ko'
-            );
-            const selectedTrack = koreanTrack || playerCaptionsTracklistRenderer.captionTracks[0];
-            if (selectedTrack?.baseUrl) {
-              const response = await axios.get(selectedTrack.baseUrl);
-              captionsData = response.data;
-              console.log('새로운 형식 자막 가져오기 성공');
-            }
-          }
-        }
-      } catch (error) {
-        console.log('새로운 형식 자막 처리 실패:', error.message);
-        errorMessages.push(`새로운 형식 자막 처리 실패: ${error.message}`);
-      }
+    } catch (apiError: any) {
+      console.error('YouTube API 오류:', apiError.message);
+      errorMessages.push(`YouTube API 오류: ${apiError.message}`);
     }
   }
 
-  // youtube-transcript-api 시도
+  // 4. 방법 3: youtube-transcript-api 사용
   if (!captionsData) {
     try {
       console.log('youtube-transcript-api 시도');
@@ -186,57 +225,171 @@ async function getYouTubeTranscript(videoId: string): Promise<string> {
         });
         return segments.join('\n');
       }
-    } catch (error) {
-      console.log('youtube-transcript-api 실패:', error.message);
-      errorMessages.push(`youtube-transcript-api 실패: ${error.message}`);
+    } catch (apiError: any) {
+      console.error('youtube-transcript-api 실패:', apiError.message);
+      errorMessages.push(`youtube-transcript-api 실패: ${apiError.message}`);
     }
   }
 
-  // 자막 데이터 처리
+  // 5. 자막 데이터 처리
   if (captionsData) {
     try {
       console.log('자막 데이터 처리 시작');
-      let segments: string[] = [];
-
-      if (captionsData.events) {
-        segments = captionsData.events
-          .filter((event: any) => event.segs && event.segs.length > 0)
-          .map((event: any) => {
-            const startTime = Math.floor(event.tStartMs / 1000);
-            const minutes = Math.floor(startTime / 60);
-            const seconds = startTime % 60;
-            const text = event.segs.map((seg: any) => seg.utf8).join('').trim();
-            return `[${minutes}:${seconds.toString().padStart(2, '0')}] ${text}`;
-          });
-      } else if (Array.isArray(captionsData)) {
-        segments = captionsData
-          .filter((item: any) => item.text)
-          .map((item: any) => {
-            const startTime = Math.floor(parseFloat(item.start));
-            const minutes = Math.floor(startTime / 60);
-            const seconds = startTime % 60;
-            return `[${minutes}:${seconds.toString().padStart(2, '0')}] ${item.text}`;
-          });
+      let transcript = '';
+      
+      // XML 형식 처리 (문자열)
+      if (typeof captionsData === 'string') {
+        // 시간과 텍스트 추출을 위한 정규식
+        const textRegex = /<text[^>]*start="([^"]*)"[^>]*dur="([^"]*)"[^>]*>(.*?)<\/text>/g;
+        let match;
+        let segments: string[] = [];
+        
+        while ((match = textRegex.exec(captionsData)) !== null) {
+          const startTime = parseFloat(match[1]);
+          const text = decodeHtmlEntities(match[3]).trim();
+          
+          if (text) {
+            const formattedTime = formatTime(startTime);
+            segments.push(`[${formattedTime}] ${text}`);
+          }
+        }
+        
+        // 세그먼트가 없으면 간단한 정규식으로 재시도
+        if (segments.length === 0) {
+          const simpleTextRegex = /<text[^>]*>(.*?)<\/text>/g;
+          while ((match = simpleTextRegex.exec(captionsData)) !== null) {
+            const text = decodeHtmlEntities(match[1]).trim();
+            if (text) {
+              segments.push(text);
+            }
+          }
+        }
+        
+        transcript = segments.join('\n');
+      } 
+      // JSON 형식 처리 (객체)
+      else if (typeof captionsData === 'object') {
+        // events 배열이 있는 경우 (일반적인 형식)
+        if (captionsData.events) {
+          const segments = captionsData.events
+            .filter((event: any) => event.segs && event.segs.length > 0)
+            .map((event: any) => {
+              const startTime = Math.floor((event.tStartMs || 0) / 1000);
+              const formattedTime = formatTime(startTime);
+              const text = event.segs.map((seg: any) => seg.utf8).join('').trim();
+              return text ? `[${formattedTime}] ${text}` : '';
+            })
+            .filter((segment: string) => segment);
+          
+          transcript = segments.join('\n');
+        }
       }
-
-      if (segments.length > 0) {
-        console.log('자막 추출 완료:', segments.length, '개의 세그먼트');
-        return segments.join('\n');
+      
+      if (transcript) {
+        console.log('자막 추출 성공, 길이:', transcript.length);
+        return transcript;
+      } else {
+        throw new Error('자막 텍스트를 추출할 수 없습니다.');
       }
-    } catch (error) {
-      console.log('자막 데이터 처리 실패:', error.message);
-      errorMessages.push(`자막 데이터 처리 실패: ${error.message}`);
+    } catch (processingError: any) {
+      console.error('자막 데이터 처리 실패:', processingError.message);
+      errorMessages.push(`자막 데이터 처리 실패: ${processingError.message}`);
     }
   }
 
-  // 모든 방법 실패
-  console.log('모든 자막 추출 방법 실패');
-  throw new Error(`자막을 찾을 수 없습니다. 시도한 방법:\n${errorMessages.join('\n')}`);
+  // 모든 시도 실패
+  console.error('모든 자막 추출 방법 실패');
+  throw new Error(`자막을 찾을 수 없습니다. ${errorMessages.join(', ')}`);
+}
+
+// 시간을 00:00:00 형식으로 변환하는 함수
+function formatTime(seconds: number): string {
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const secs = Math.floor(seconds % 60);
+  
+  if (hours > 0) {
+    return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  } else {
+    return `${minutes}:${secs.toString().padStart(2, '0')}`;
+  }
+}
+
+// HTML 엔티티 디코딩 함수
+function decodeHtmlEntities(text: string): string {
+  return text
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&#(\d+);/g, (match, dec) => String.fromCharCode(parseInt(dec, 10)));
 }
 
 // 기본 라우트 (루트 경로)
 app.get('/', (req, res) => {
   res.status(200).send('CorpEasy API is running');
+});
+
+// YouTube 자막 가져오기 엔드포인트 (GET 메서드)
+app.get('/api/youtube-transcript', authMiddleware, async (req, res) => {
+  try {
+    const { url } = req.query;
+    
+    if (!url) {
+      return res.status(200).json({
+        success: false,
+        message: 'YouTube URL이 필요합니다.',
+      });
+    }
+    
+    // YouTube URL 검증
+    if (!url.toString().includes('youtube.com/watch') && !url.toString().includes('youtu.be/')) {
+      return res.status(200).json({
+        success: false,
+        message: '유효한 YouTube URL이 아닙니다.',
+      });
+    }
+    
+    console.log(`YouTube 자막 가져오기 요청: ${url}`);
+    
+    // YouTube 비디오 ID 추출
+    const videoId = extractYouTubeVideoId(url.toString());
+    
+    if (!videoId) {
+      return res.status(200).json({
+        success: false,
+        message: 'YouTube 비디오 ID를 추출할 수 없습니다.',
+      });
+    }
+    
+    try {
+      // 자막 가져오기
+      const transcript = await getYouTubeTranscript(videoId);
+      
+      return res.status(200).json({
+        success: true,
+        videoId,
+        transcript,
+      });
+    } catch (transcriptError: any) {
+      // 자막 가져오기 실패 시 200 응답으로 에러 전달
+      console.error(`자막 가져오기 실패 (videoId: ${videoId}):`, transcriptError.message);
+      return res.status(200).json({
+        success: false,
+        videoId,
+        message: transcriptError.message,
+      });
+    }
+  } catch (error: any) {
+    console.error('YouTube 자막 가져오기 오류:', error);
+    
+    // 서버 에러일 경우에만 500 응답
+    return res.status(500).json({
+      success: false,
+      message: '서버 내부 오류가 발생했습니다.',
+    });
+  }
 });
 
 // 분석 API 엔드포인트 (경로에서 /api 제거)
@@ -281,66 +434,6 @@ app.post('/analyze/content', authMiddleware, (req, res) => {
     return res.status(500).json({
       success: false,
       message: `콘텐츠 분석 중 오류가 발생했습니다: ${error.message}`,
-    });
-  }
-});
-
-// YouTube 자막 가져오기 엔드포인트 (GET 메서드)
-app.get('/youtube-transcript', authMiddleware, async (req, res) => {
-  try {
-    const { url } = req.query;
-    
-    if (!url) {
-      return res.status(200).json({
-        success: false,
-        message: 'YouTube URL이 필요합니다.',
-      });
-    }
-    
-    // YouTube URL 검증
-    if (!url.toString().includes('youtube.com/watch') && !url.toString().includes('youtu.be/')) {
-      return res.status(200).json({
-        success: false,
-        message: '유효한 YouTube URL이 아닙니다.',
-      });
-    }
-    
-    console.log(`YouTube 자막 가져오기 요청: ${url}`);
-    
-    // YouTube 비디오 ID 추출
-    const videoId = extractYouTubeVideoId(url.toString());
-    
-    if (!videoId) {
-      return res.status(200).json({
-        success: false,
-        message: 'YouTube 비디오 ID를 추출할 수 없습니다.',
-      });
-    }
-    
-    try {
-      // 자막 가져오기
-      const transcript = await getYouTubeTranscript(videoId);
-      
-      return res.status(200).json({
-        success: true,
-        videoId,
-        transcript,
-      });
-    } catch (transcriptError: any) {
-      // 자막 가져오기 실패 시 200 응답으로 에러 전달
-      return res.status(200).json({
-        success: false,
-        videoId,
-        message: transcriptError.message,
-      });
-    }
-  } catch (error: any) {
-    console.error('YouTube 자막 가져오기 오류:', error);
-    
-    // 서버 에러일 경우에만 500 응답
-    return res.status(500).json({
-      success: false,
-      message: '서버 내부 오류가 발생했습니다.',
     });
   }
 });

@@ -16,8 +16,34 @@
         <div id="cozyComponent"></div>
     </div>
 
-    <!-- Firebase Scripts -->
-    <script type="module" src="js/firebase.js"></script>
+    <!-- Firebase SDK -->
+    <script type="module">
+        // Firebase SDK 임포트
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js';
+        import { getAuth } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js';
+        import { getFirestore } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js';
+
+        // Firebase 설정
+        const firebaseConfig = {
+            apiKey: "AIzaSyCHrjpHntRG_x3o4SeAnQznwlZREzXVX6A",
+            authDomain: "corpeasy-c69bb.firebaseapp.com",
+            projectId: "corpeasy-c69bb",
+            storageBucket: "corpeasy-c69bb.appspot.com",
+            messagingSenderId: "678996911607",
+            appId: "1:678996911607:web:d2d4e777516dde82a6faf2",
+            measurementId: "G-47XDDVVQWN"
+        };
+
+        // Firebase 초기화
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // 전역으로 노출
+        window.firebaseApp = app;
+        window.firebaseAuth = auth;
+        window.firebaseDB = db;
+    </script>
 
     <!-- App Scripts -->
     <script type="module" src="js/app.js"></script>
@@ -46,10 +72,10 @@
         async function loadAllComponents() {
             try {
                 const results = await Promise.all([
-                    loadComponent('/components/header.html', 'headerComponent'),
-                    loadComponent('/components/sidebar.html', 'sidebarComponent'),
-                    loadComponent('/components/dashboard.html', 'dashboardComponent'),
-                    loadComponent('/components/cozy.html', 'cozyComponent')
+                    loadComponent('/components/Header.html', 'headerComponent'),
+                    loadComponent('/components/Sidebar.html', 'sidebarComponent'),
+                    loadComponent('/components/Dashboard.html', 'dashboardComponent'),
+                    loadComponent('/components/Cozy.html', 'cozyComponent')
                 ]);
 
                 // 모든 컴포넌트가 성공적으로 로드되었는지 확인

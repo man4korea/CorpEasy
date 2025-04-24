@@ -1,6 +1,8 @@
-// Firebase 모듈 import
-import { auth, db, analytics } from './firebase.js';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from './firebase.js';
+// Firebase 서비스
+const auth = window.firebaseAuth;
+const db = window.firebaseDB;
+
+// Cozy 채팅 모듈 import
 import { initializeCozyChat } from './cozy.js';
 
 // DOM 요소들을 가져오는 함수

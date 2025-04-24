@@ -1,5 +1,5 @@
 # 📁 .github/workflows/ci-cd-deploy.yml
-# Create at 2504240930 Ver1.0
+# Create at 2504241005 Ver1.1
 
 name: CI/CD Build & Deploy
 
@@ -16,9 +16,6 @@ jobs:
       - name: 🛎️ Checkout code
         uses: actions/checkout@v3
 
-            - name: 🛎️ Checkout code
-        uses: actions/checkout@v3
-
       - name: ⚙️ Prepare static files
         run: |
           mkdir -p public
@@ -30,10 +27,4 @@ jobs:
           args: deploy --only hosting
         env:
           FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
-          PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
-        uses: w9jds/firebase-action@v2.2.0
-        with:
-          args: deploy --only hosting
-        env:
-          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
-          PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+          PROJECT_ID:        ${{ secrets.FIREBASE_PROJECT_ID }}

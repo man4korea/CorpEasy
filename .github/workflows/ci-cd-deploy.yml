@@ -19,7 +19,8 @@ jobs:
       - name: ⚙️ Prepare static files
         run: |
           mkdir -p public
-          cp -R index.html css js components images public/
+          cp -R index.html css js components public/
+          if [ -d images ]; then cp -R images public/; fi
 
       - name: 🔑 Deploy to Firebase Hosting
         uses: w9jds/firebase-action@v2.2.0

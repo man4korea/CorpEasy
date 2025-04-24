@@ -1,10 +1,10 @@
 // Firebase 초기화 및 설정 ver 1.0
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.6.1/firebase-app.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.6.10/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword as _signInWithEmailAndPassword, 
          createUserWithEmailAndPassword as _createUserWithEmailAndPassword,
-         signOut as _signOut } from "https://www.gstatic.com/firebasejs/10.6.1/firebase-auth.js";
-import { getFirestore } from "https://www.gstatic.com/firebasejs/10.6.1/firebase-firestore.js";
-import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.6.1/firebase-analytics.js";
+         signOut as _signOut } from "https://www.gstatic.com/firebasejs/10.6.10/firebase-auth.js";
+import { getFirestore } from "https://www.gstatic.com/firebasejs/10.6.10/firebase-firestore.js";
+import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.6.10/firebase-analytics.js";
 
 // Firebase 설정
 const firebaseConfig = {

@@ -1,0 +1,199 @@
+{
+    "version": "1.0",
+    "last_updated": "2024-04-24",
+    "assistant_rules": {
+        "development": {
+            "source": "global-development-rules.json",
+            "rules": [
+                {
+                    "name": "file_modification",
+                    "rule": "사용자의 명시적인 확인 없이는 파일을 삭제하거나 수정할 수 없음",
+                    "priority": 1
+                },
+                {
+                    "name": "modification_scope",
+                    "rule": "지시된 파일만 수정하며, 추가 파일 수정/생성 시 반드시 승인을 받아야 함",
+                    "priority": 2
+                },
+                {
+                    "name": "file_header",
+                    "rule": "모든 파일(JSON 제외)의 상단에 표준 헤더 형식 적용",
+                    "priority": 3
+                },
+                {
+                    "name": "ui_ux_consistency",
+                    "rule": "모든 페이지 생성 및 수정 시 UI/UX 가이드라인 준수",
+                    "priority": 4
+                },
+                {
+                    "name": "development_logging",
+                    "rule": "매일 수정/생성된 파일의 변경사항을 개발 로그에 기록",
+                    "priority": 5
+                }
+            ]
+        },
+        "cursor_ide": {
+            "source": "cursor_rules.json",
+            "rules": [
+                {
+                    "name": "development_log",
+                    "rule": "코드 변경이나 새로운 코드 생성 시 개발 로그 기록",
+                    "format": {
+                        "date": "YYYY-MM-DD",
+                        "sections": ["변경 카테고리", "상세 변경 내용", "영향받는 파일 목록", "테스트 결과"]
+                    }
+                },
+                {
+                    "name": "code_review",
+                    "rule": "코드 변경 전 리뷰 프로세스",
+                    "steps": ["변경 사항 설명", "영향도 분석", "테스트 계획", "리뷰어 지정"]
+                },
+                {
+                    "name": "commit_message",
+                    "rule": "Git 커밋 메시지 작성 규칙",
+                    "format": {
+                        "type": ["feat", "fix", "docs", "style", "refactor", "test", "chore"],
+                        "scope": "optional",
+                        "subject": "required"
+                    }
+                }
+            ]
+        },
+        "ui_ux": {
+            "source": "CorpEasy_UI_UX_Guideline.md",
+            "guidelines": [
+                {
+                    "name": "brand_identity",
+                    "rules": {
+                        "design_philosophy": ["모던하고 심플한 디자인", "불필요한 텍스트나 장식 제거", "padding, margin, shadow 최소화"],
+                        "logo": {
+                            "font": "Pacifico",
+                            "color": "#007bff"
+                        },
+                        "typography": {
+                            "main_font": "Noto Sans CJK KR",
+                            "code_font": "source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace"
+                        },
+                        "colors": {
+                            "primary": "#007bff",
+                            "secondary": "#6b7280",
+                            "danger": "#ef4444",
+                            "success": "#22c55e"
+                        }
+                    }
+                },
+                {
+                    "name": "responsive_design",
+                    "breakpoints": {
+                        "sm": "640px",
+                        "md": "768px",
+                        "lg": "1024px",
+                        "xl": "1280px",
+                        "2xl": "1536px"
+                    }
+                },
+                {
+                    "name": "accessibility",
+                    "rules": [
+                        "충분한 색상 대비",
+                        "키보드 네비게이션 지원",
+                        "ARIA 레이블 사용",
+                        "적절한 폰트 크기",
+                        "오류 메시지의 명확한 표시"
+                    ]
+                }
+            ]
+        },
+        "html_style": {
+            "source": "html_style_reference.txt",
+            "rules": [
+                {
+                    "name": "headings",
+                    "styles": {
+                        "h2": {
+                            "style": "font-size: 1.8rem; font-weight: 700; color: #0d47a1; border-left: 5px solid #1976d2; padding-left: 0.8em;",
+                            "usage": "주요 섹션 제목"
+                        },
+                        "h3": {
+                            "style": "font-size: 1.5rem; font-weight: 700; color: #ffffff; background-color: #1565c0; padding: 0.5em 1em;",
+                            "usage": "섹션 내 하위 주제"
+                        },
+                        "h4": {
+                            "style": "font-size: 1.2rem; font-weight: 700; color: #1e88e5; font-style: italic;",
+                            "usage": "일반 소제목"
+                        }
+                    }
+                },
+                {
+                    "name": "text_styles",
+                    "styles": {
+                        "normal": {
+                            "style": "font-size: 1rem; line-height: 1.8; color: #333;",
+                            "usage": "일반 본문 텍스트"
+                        },
+                        "emphasis": {
+                            "style": "color: #1565c0; font-weight: 500;",
+                            "usage": "강조 텍스트"
+                        },
+                        "highlight": {
+                            "style": "background-color: #bbdefb; color: #1565c0; padding: 0 3px; border-radius: 2px;",
+                            "usage": "하이라이트/형광펜 효과"
+                        }
+                    }
+                },
+                {
+                    "name": "containers",
+                    "styles": {
+                        "blockquote": {
+                            "style": "border-left: 4px solid #1976d2; padding: 0.5em 1em; background-color: #e3f2fd;",
+                            "usage": "인용구"
+                        },
+                        "emphasis_box": {
+                            "style": "background-color: #1976d2; color: white; padding: 1em; border-radius: 4px;",
+                            "usage": "강조 박스"
+                        },
+                        "warning_box": {
+                            "style": "border-left: 4px solid #ff5722; padding: 1em; background-color: #fff3e0; color: #e64a19;",
+                            "usage": "경고/주의 상자"
+                        }
+                    }
+                },
+                {
+                    "name": "code",
+                    "styles": {
+                        "block": {
+                            "style": "background-color: #f5f5f5; border-radius: 4px; padding: 1em; border-left: 4px solid #1976d2;",
+                            "font": "Consolas, Monaco, monospace"
+                        },
+                        "inline": {
+                            "style": "background-color: #f5f5f5; padding: 0.2em 0.4em; border-radius: 3px;",
+                            "font": "Consolas, Monaco, monospace"
+                        }
+                    }
+                }
+            ]
+        },
+        "blog_writing": {
+            "prompt_steps": "Blog_5_Step_Prompt.txt",
+            "style_guide": "blog_style_guide.txt",
+            "output_format": "blog_output_format.txt",
+            "natural_writing": "natural_human_blog_writing_instruction.txt"
+        },
+        "content_analysis": {
+            "source": "content_analyzer_guide.md",
+            "guidelines": []
+        },
+        "coji_assistant": {
+            "source": "coji_guide.md",
+            "guidelines": []
+        }
+    },
+    "update_mechanism": {
+        "auto_update": true,
+        "update_frequency": "on_file_change",
+        "source_tracking": {
+            "track_changes": true,
+            "backup_before_update": true
+        }
+    }
+} 

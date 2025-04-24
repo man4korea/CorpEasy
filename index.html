@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CorpEasy - YouTube Content Analyzer</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Component Containers -->
+        <div id="headerComponent"></div>
+        <div id="sidebarComponent"></div>
+        <div id="dashboardComponent"></div>
+        <div id="cozyComponent"></div>
+    </div>
+
+    <!-- Firebase Scripts -->
+    <script type="module" src="js/firebase.js"></script>
+
+    <!-- App Scripts -->
+    <script type="module" src="js/app.js"></script>
+    <script type="module">
+        // 컴포넌트 로드 함수
+        async function loadComponent(url, targetId) {
+            try {
+                const response = await fetch(url);
+                const html = await response.text();
+                document.getElementById(targetId).innerHTML = html;
+            } catch (error) {
+                console.error('컴포넌트 로드 실패:', error);
+            }
+        }
+
+        // 모든 컴포넌트 로드
+        async function loadAllComponents() {
+            try {
+                await Promise.all([
+                    loadComponent('components/header.html', 'headerComponent'),
+                    loadComponent('components/sidebar.html', 'sidebarComponent'),
+                    loadComponent('components/dashboard.html', 'dashboardComponent'),
+                    loadComponent('components/cozy.html', 'cozyComponent')
+                ]);
+            } catch (error) {
+                console.error('컴포넌트 로드 실패:', error);
+            }
+        }
+
+        // 페이지 로드 시 컴포넌트 로드
+        document.addEventListener('DOMContentLoaded', loadAllComponents);
+    </script>
+</body>
+</html> 

@@ -1,0 +1,290 @@
+<!-- Cozy -->
+<div class="cogy-container">
+    <div class="cogy-chat" id="cogyChat">
+        <div class="chat-header">
+            <div class="chat-title">
+                <div class="cogy-avatar">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <div>
+                    <h3>Cozy</h3>
+                </div>
+            </div>
+            <button class="btn-icon" id="closeChat">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="chat-messages" id="chatMessages">
+            <!-- 초기 메시지 -->
+            <div class="message cozy">
+                <div class="message-content">
+                    <span class="emotion">😊</span>
+                    <p>어서오오세요! 무엇을 도와드릴까요?</p>
+                </div>
+            </div>
+        </div>
+        <div class="chat-input">
+            <textarea
+                id="messageInput"
+                placeholder="메시지를 입력하세요..."
+                rows="1"
+            ></textarea>
+            <button class="btn-send" id="sendMessage">
+                <i class="fas fa-paper-plane"></i>
+            </button>
+        </div>
+    </div>
+
+    <button class="cogy-button floating" id="cogyButton">
+        <div class="cogy-icon">
+            <span class="angel">👼</span>
+            <span class="sparkle">✨</span>
+        </div>
+    </button>
+</div>
+
+<style>
+/* Cogy 컨테이너 */
+.cogy-container {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* Cogy 채팅창 */
+.cogy-chat {
+    position: absolute;
+    bottom: 80px;
+    right: 0;
+    width: 400px;
+    height: 480px;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+    transform-origin: bottom right;
+}
+
+.cogy-chat.show {
+    display: flex;
+    animation: chatOpen 0.3s ease-out forwards;
+}
+
+/* Cogy 버튼 */
+.cogy-button {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: #F472B6;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(244, 114, 182, 0.3);
+    transition: all 0.2s;
+    position: relative;
+}
+
+.cogy-button:hover {
+    background: #EC4899;
+    transform: scale(1.1);
+}
+
+.cogy-button:active {
+    transform: scale(0.9);
+}
+
+/* 둥둥 떠다니는 애니메이션 */
+.cogy-button.floating {
+    animation: floating 3s ease-in-out infinite;
+}
+
+@keyframes floating {
+    0%, 100% {
+        transform: translateY(0) rotate(0deg);
+    }
+    25% {
+        transform: translateY(-10px) rotate(5deg);
+    }
+    75% {
+        transform: translateY(-5px) rotate(-5deg);
+    }
+}
+
+.cogy-icon {
+    position: relative;
+    width: 32px;
+    height: 32px;
+}
+
+.cogy-icon .angel {
+    position: absolute;
+    font-size: 24px;
+    top: -2px;
+    left: -1px;
+}
+
+.cogy-icon .sparkle {
+    position: absolute;
+    font-size: 16px;
+    bottom: -1px;
+    right: -1px;
+}
+
+/* 메시지 스타일 */
+.message {
+    display: flex;
+    gap: 8px;
+    max-width: 80%;
+    margin: 8px;
+    animation: slideUp 0.3s ease-out;
+}
+
+.message.cozy {
+    margin-right: auto;
+}
+
+.message.user {
+    margin-left: auto;
+    flex-direction: row-reverse;
+}
+
+.message-content {
+    background: #f8f9fa;
+    padding: 12px 16px;
+    border-radius: 16px;
+    border-bottom-left-radius: 4px;
+    font-size: 14px;
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+}
+
+.message.user .message-content {
+    background: #1a73e8;
+    color: white;
+    border-radius: 16px;
+    border-bottom-right-radius: 4px;
+}
+
+.emotion {
+    font-size: 16px;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes chatOpen {
+    from {
+        opacity: 0;
+        transform: scale(0.3) translateY(50px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+/* Cogy 아바타 */
+.cogy-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #F472B6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 20px;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const cogyChat = document.getElementById('cogyChat');
+    const cogyButton = document.getElementById('cogyButton');
+    const closeChat = document.getElementById('closeChat');
+    const messageInput = document.getElementById('messageInput');
+    const sendMessage = document.getElementById('sendMessage');
+    const chatMessages = document.getElementById('chatMessages');
+
+    // 채팅창 토글
+    cogyButton.addEventListener('click', () => {
+        cogyChat.classList.toggle('show');
+    });
+
+    // 채팅창 닫기
+    closeChat.addEventListener('click', () => {
+        cogyChat.classList.remove('show');
+    });
+
+    // 메시지 전송
+    const sendNewMessage = () => {
+        const text = messageInput.value.trim();
+        if (!text) return;
+
+        // 사용자 메시지 추가
+        const userMessage = document.createElement('div');
+        userMessage.className = 'message user';
+        userMessage.innerHTML = `
+            <div class="message-content">
+                <p>${text}</p>
+            </div>
+        `;
+        chatMessages.appendChild(userMessage);
+
+        // 입력창 초기화
+        messageInput.value = '';
+
+        // 스크롤 맨 아래로
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+
+        // Cozy 응답 (예시)
+        setTimeout(() => {
+            const cozyMessage = document.createElement('div');
+            cozyMessage.className = 'message cozy';
+            cozyMessage.innerHTML = `
+                <div class="message-content">
+                    <span class="emotion">😊</span>
+                    <p>네, 알겠습니다! 도와드리겠습니다.</p>
+                </div>
+            `;
+            chatMessages.appendChild(cozyMessage);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }, 1000);
+    };
+
+    // 전송 버튼 클릭
+    sendMessage.addEventListener('click', sendNewMessage);
+
+    // Enter 키 입력
+    messageInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendNewMessage();
+        }
+    });
+
+    // 외부 클릭 시 채팅창 닫기
+    document.addEventListener('click', (e) => {
+        if (!cogyChat.contains(e.target) && !cogyButton.contains(e.target)) {
+            cogyChat.classList.remove('show');
+        }
+    });
+});
+</script> 

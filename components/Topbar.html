@@ -1,0 +1,74 @@
+<!-- Topbar Component -->
+<header class="topbar">
+    <div class="topbar-container">
+        <div class="topbar-content">
+            <!-- 왼쪽 영역: 햄버거 메뉴와 로고 -->
+            <div class="topbar-left">
+                <button id="sidebarToggle" class="btn-icon" aria-label="사이드바 열기">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <a href="/dashboard" class="logo" onclick="event.preventDefault(); window.location.reload();">CorpEasy</a>
+            </div>
+
+            <!-- 중앙 영역: 블로그 메뉴 -->
+            <nav class="topbar-center">
+                <a href="/blog" class="nav-link">블로그</a>
+            </nav>
+
+            <!-- 오른쪽 영역: 알림 및 사용자 메뉴 -->
+            <div class="topbar-right">
+                <!-- 알림 버튼 -->
+                <div class="notification-menu">
+                    <button class="btn-icon" id="notificationToggle">
+                        <i class="fas fa-bell"></i>
+                        <span class="notification-badge"></span>
+                    </button>
+                    <!-- 알림 드롭다운 -->
+                    <div class="dropdown notification-dropdown" id="notificationDropdown">
+                        <div class="dropdown-header">
+                            <h3>알림</h3>
+                        </div>
+                        <div class="dropdown-content">
+                            <div class="notification-item">
+                                <p class="notification-title">새로운 AI 모델 추가</p>
+                                <p class="notification-desc">Claude 3.5 Sonnet이 추가되었습니다.</p>
+                            </div>
+                            <div class="notification-item">
+                                <p class="notification-title">업데이트 알림</p>
+                                <p class="notification-desc">시스템이 업데이트 되었습니다.</p>
+                            </div>
+                        </div>
+                        <div class="dropdown-footer">
+                            <button class="link">모든 알림 보기</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 사용자 메뉴 -->
+                <div class="user-menu">
+                    <button class="user-menu-button" id="userMenuToggle">
+                        <i class="fas fa-user-circle gold"></i>
+                        <span class="user-name">홍길동</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <!-- 사용자 메뉴 드롭다운 -->
+                    <div class="dropdown user-dropdown" id="userDropdown">
+                        <a href="/profile" class="dropdown-item">
+                            <i class="fas fa-user"></i>
+                            프로필
+                        </a>
+                        <a href="/settings" class="dropdown-item">
+                            <i class="fas fa-cog"></i>
+                            설정
+                        </a>
+                        <div class="dropdown-divider"></div>
+                        <button class="dropdown-item text-danger">
+                            <i class="fas fa-sign-out-alt"></i>
+                            로그아웃
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</header> 

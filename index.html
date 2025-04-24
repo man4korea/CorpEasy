@@ -26,10 +26,17 @@
         async function loadComponent(url, targetId) {
             try {
                 const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
                 const html = await response.text();
-                document.getElementById(targetId).innerHTML = html;
+                const targetElement = document.getElementById(targetId);
+                if (!targetElement) {
+                    throw new Error(`Target element ${targetId} not found`);
+                }
+                targetElement.innerHTML = html;
             } catch (error) {
-                console.error('컴포넌트 로드 실패:', error);
+                console.error(`컴포넌트 로드 실패 (${url}):`, error);
             }
         }
 
@@ -38,10 +45,14 @@
             try {
                 await Promise.all([
                     loadComponent('components/header.html', 'headerComponent'),
-                    loadComponent('components/sidebar.html', 'sidebarComponent'),
-                    loadComponent('components/dashboard.html', 'dashboardComponent'),
+                    loadComponent('components/Sidebar.html', 'sidebarComponent'),
+                    loadComponent('components/Dashboard.html', 'dashboardComponent'),
                     loadComponent('components/cozy.html', 'cozyComponent')
                 ]);
+                // 컴포넌트 로드 후 초기화 함수 호출
+                if (typeof initializeAfterLoad === 'function') {
+                    initializeAfterLoad();
+                }
             } catch (error) {
                 console.error('컴포넌트 로드 실패:', error);
             }

@@ -1,9 +1,9 @@
 <!-- Cozy -->
-<div class="cogy-container">
-    <div class="cogy-chat" id="cogyChat">
+<div class="cozy-container">
+    <div class="cozy-chat" id="cozyChat">
         <div class="chat-header">
             <div class="chat-title">
-                <div class="cogy-avatar">
+                <div class="cozy-avatar">
                     <i class="fas fa-robot"></i>
                 </div>
                 <div>
@@ -19,7 +19,7 @@
             <div class="message cozy">
                 <div class="message-content">
                     <span class="emotion">😊</span>
-                    <p>어서오오세요! 무엇을 도와드릴까요?</p>
+                    <p>어서오세요! 무엇을 도와드릴까요?</p>
                 </div>
             </div>
         </div>
@@ -35,8 +35,8 @@
         </div>
     </div>
 
-    <button class="cogy-button floating" id="cogyButton">
-        <div class="cogy-icon">
+    <button class="cozy-button floating" id="cozyButton">
+        <div class="cozy-icon">
             <span class="angel">👼</span>
             <span class="sparkle">✨</span>
         </div>
@@ -44,8 +44,8 @@
 </div>
 
 <style>
-/* Cogy 컨테이너 */
-.cogy-container {
+/* Cozy 컨테이너 */
+.cozy-container {
     position: fixed;
     bottom: 24px;
     right: 24px;
@@ -55,8 +55,8 @@
     align-items: center;
 }
 
-/* Cogy 채팅창 */
-.cogy-chat {
+/* Cozy 채팅창 */
+.cozy-chat {
     position: absolute;
     bottom: 80px;
     right: 0;
@@ -71,13 +71,13 @@
     transform-origin: bottom right;
 }
 
-.cogy-chat.show {
+.cozy-chat.show {
     display: flex;
     animation: chatOpen 0.3s ease-out forwards;
 }
 
-/* Cogy 버튼 */
-.cogy-button {
+/* Cozy 버튼 */
+.cozy-button {
     width: 56px;
     height: 56px;
     border-radius: 50%;
@@ -92,17 +92,17 @@
     position: relative;
 }
 
-.cogy-button:hover {
+.cozy-button:hover {
     background: #EC4899;
     transform: scale(1.1);
 }
 
-.cogy-button:active {
+.cozy-button:active {
     transform: scale(0.9);
 }
 
 /* 둥둥 떠다니는 애니메이션 */
-.cogy-button.floating {
+.cozy-button.floating {
     animation: floating 3s ease-in-out infinite;
 }
 
@@ -118,20 +118,20 @@
     }
 }
 
-.cogy-icon {
+.cozy-icon {
     position: relative;
     width: 32px;
     height: 32px;
 }
 
-.cogy-icon .angel {
+.cozy-icon .angel {
     position: absolute;
     font-size: 24px;
     top: -2px;
     left: -1px;
 }
 
-.cogy-icon .sparkle {
+.cozy-icon .sparkle {
     position: absolute;
     font-size: 16px;
     bottom: -1px;
@@ -200,8 +200,8 @@
     }
 }
 
-/* Cogy 아바타 */
-.cogy-avatar {
+/* Cozy 아바타 */
+.cozy-avatar {
     width: 40px;
     height: 40px;
     border-radius: 50%;
@@ -212,79 +212,4 @@
     color: white;
     font-size: 20px;
 }
-</style>
-
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-    const cogyChat = document.getElementById('cogyChat');
-    const cogyButton = document.getElementById('cogyButton');
-    const closeChat = document.getElementById('closeChat');
-    const messageInput = document.getElementById('messageInput');
-    const sendMessage = document.getElementById('sendMessage');
-    const chatMessages = document.getElementById('chatMessages');
-
-    // 채팅창 토글
-    cogyButton.addEventListener('click', () => {
-        cogyChat.classList.toggle('show');
-    });
-
-    // 채팅창 닫기
-    closeChat.addEventListener('click', () => {
-        cogyChat.classList.remove('show');
-    });
-
-    // 메시지 전송
-    const sendNewMessage = () => {
-        const text = messageInput.value.trim();
-        if (!text) return;
-
-        // 사용자 메시지 추가
-        const userMessage = document.createElement('div');
-        userMessage.className = 'message user';
-        userMessage.innerHTML = `
-            <div class="message-content">
-                <p>${text}</p>
-            </div>
-        `;
-        chatMessages.appendChild(userMessage);
-
-        // 입력창 초기화
-        messageInput.value = '';
-
-        // 스크롤 맨 아래로
-        chatMessages.scrollTop = chatMessages.scrollHeight;
-
-        // Cozy 응답 (예시)
-        setTimeout(() => {
-            const cozyMessage = document.createElement('div');
-            cozyMessage.className = 'message cozy';
-            cozyMessage.innerHTML = `
-                <div class="message-content">
-                    <span class="emotion">😊</span>
-                    <p>네, 알겠습니다! 도와드리겠습니다.</p>
-                </div>
-            `;
-            chatMessages.appendChild(cozyMessage);
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-        }, 1000);
-    };
-
-    // 전송 버튼 클릭
-    sendMessage.addEventListener('click', sendNewMessage);
-
-    // Enter 키 입력
-    messageInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            sendNewMessage();
-        }
-    });
-
-    // 외부 클릭 시 채팅창 닫기
-    document.addEventListener('click', (e) => {
-        if (!cogyChat.contains(e.target) && !cogyButton.contains(e.target)) {
-            cogyChat.classList.remove('show');
-        }
-    });
-});
-</script> 
+</style> 

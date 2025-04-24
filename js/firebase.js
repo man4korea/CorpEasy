@@ -18,31 +18,41 @@ const firebaseConfig = {
 };
 
 // Firebase 초기화
-const app = initializeApp(firebaseConfig);
-export const auth = getAuth(app);
-export const db = getFirestore(app);
-export const analytics = getAnalytics(app);
+let app, auth, db, analytics;
 
-// 전역으로 노출
-window.firebaseApp = app;
-window.firebaseAuth = auth;
-window.firebaseDB = db;
-window.firebaseAnalytics = analytics;
+try {
+    app = initializeApp(firebaseConfig);
+    auth = getAuth(app);
+    db = getFirestore(app);
+    analytics = getAnalytics(app);
+
+    // 전역으로 노출
+    window.firebaseApp = app;
+    window.firebaseAuth = auth;
+    window.firebaseDB = db;
+    window.firebaseAnalytics = analytics;
+} catch (error) {
+    console.error('Firebase 초기화 실패:', error);
+}
+
+export { auth, db, analytics };
 
 // Firebase 인증 상태 관찰자
-auth.onAuthStateChanged((user) => {
-    if (user) {
-        // 사용자가 로그인한 경우
-        console.log('로그인된 사용자:', user.email);
-        // 로그인 상태에 따른 UI 업데이트
-        updateUIForUser(user);
-    } else {
-        // 로그아웃 상태
-        console.log('로그아웃 상태');
-        // 로그아웃 상태에 따른 UI 업데이트
-        updateUIForGuest();
-    }
-});
+if (auth) {
+    auth.onAuthStateChanged((user) => {
+        if (user) {
+            // 사용자가 로그인한 경우
+            console.log('로그인된 사용자:', user.email);
+            // 로그인 상태에 따른 UI 업데이트
+            updateUIForUser(user);
+        } else {
+            // 로그아웃 상태
+            console.log('로그아웃 상태');
+            // 로그아웃 상태에 따른 UI 업데이트
+            updateUIForGuest();
+        }
+    });
+}
 
 // UI 업데이트 함수
 function updateUIForUser(user) {
@@ -64,6 +74,7 @@ function updateUIForGuest() {
 // Firebase 인증 함수들
 export async function signInWithEmailAndPassword(email, password) {
     try {
+        if (!auth) throw new Error('Firebase Auth가 초기화되지 않았습니다.');
         const userCredential = await _signInWithEmailAndPassword(auth, email, password);
         return userCredential.user;
     } catch (error) {
@@ -74,6 +85,7 @@ export async function signInWithEmailAndPassword(email, password) {
 
 export async function createUserWithEmailAndPassword(email, password) {
     try {
+        if (!auth) throw new Error('Firebase Auth가 초기화되지 않았습니다.');
         const userCredential = await _createUserWithEmailAndPassword(auth, email, password);
         return userCredential.user;
     } catch (error) {
@@ -84,6 +96,7 @@ export async function createUserWithEmailAndPassword(email, password) {
 
 export async function signOut() {
     try {
+        if (!auth) throw new Error('Firebase Auth가 초기화되지 않았습니다.');
         await _signOut(auth);
     } catch (error) {
         console.error('로그아웃 실패:', error);

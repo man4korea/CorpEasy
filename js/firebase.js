@@ -1,4 +1,4 @@
-// Firebase 초기화 및 설정
+// Firebase 초기화 및 설정 ver 1.0
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.6.1/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword as _signInWithEmailAndPassword, 
          createUserWithEmailAndPassword as _createUserWithEmailAndPassword,

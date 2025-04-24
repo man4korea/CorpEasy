@@ -16,26 +16,21 @@ jobs:
       - name: 🛎️ Checkout code
         uses: actions/checkout@v3
 
-      - name: 🔧 Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
+            - name: 🛎️ Checkout code
+        uses: actions/checkout@v3
 
-      - name: 📦 Install dependencies
+      - name: ⚙️ Prepare static files
         run: |
-          if [ -f package-lock.json ]; then
-            npm ci
-          else
-            npm install
-          fi
-      
-      - name: ⚙️ Build web-app
-        run: |
-          npm run build  # if you have a build step (e.g. Vite)
-          # Copy plain HTML/CSS/JS into public folder
+          mkdir -p public
           cp -R index.html css js components images public/
 
-      - name: 🔑 Authenticate Firebase
+      - name: 🔑 Deploy to Firebase Hosting
+        uses: w9jds/firebase-action@v2.2.0
+        with:
+          args: deploy --only hosting
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+          PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
         uses: w9jds/firebase-action@v2.2.0
         with:
           args: deploy --only hosting

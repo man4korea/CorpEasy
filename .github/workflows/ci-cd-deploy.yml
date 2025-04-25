@@ -1,5 +1,5 @@
 # 📁 .github/workflows/ci-cd-deploy.yml
-# Create at 2504241005 Ver1.1
+# Create at 2504251100 Ver1.2
 
 name: CI/CD Build & Deploy
 
@@ -16,19 +16,16 @@ jobs:
       - name: 🛎️ Checkout code
         uses: actions/checkout@v3
 
-      - name: ⚙️ Prepare static files
-        run: |
-          mkdir -p public
-          cp -R index.html css js components public/
-          if [ -d images ]; then cp -R images public/; fi
+      # public/ 폴더에 이미 정적 리소스가 포함되어 있습니다.
+      # 별도 Prepare 단계 없이 바로 배포합니다.
 
       - name: 🔑 Deploy to Firebase Hosting
         uses: w9jds/firebase-action@v2.2.0
         with:
           args: deploy --only hosting
         env:
-          # Ensure the following GitHub Secrets are set in your repo settings:
-          # FIREBASE_TOKEN: Firebase CI token (generate with `firebase login:ci` locally)
+          # GitHub Secrets 설정 필요:
+          # FIREBASE_TOKEN: Firebase CI token
           # FIREBASE_PROJECT_ID: Firebase project ID
           FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
           PROJECT_ID:    ${{ secrets.FIREBASE_PROJECT_ID }}

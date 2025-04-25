@@ -1,0 +1,140 @@
+/* Cozy 채팅 스타일 */
+.cozy-button {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 50px;
+    padding: 12px 24px;
+    cursor: pointer;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
+    z-index: 1000;
+}
+
+.cozy-button:hover {
+    background-color: #0056b3;
+    transform: translateY(-2px);
+}
+
+.cozy-chat {
+    position: fixed;
+    bottom: 80px;
+    right: 20px;
+    width: 350px;
+    height: 500px;
+    background-color: white;
+    border-radius: 12px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    display: none;
+    flex-direction: column;
+    z-index: 1000;
+    overflow: hidden;
+}
+
+.cozy-chat.active {
+    display: flex;
+}
+
+.cozy-header {
+    background-color: #007bff;
+    color: white;
+    padding: 15px;
+    font-size: 16px;
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+}
+
+.cozy-header h3 {
+    margin: 0;
+    font-weight: 500;
+}
+
+.cozy-message-area {
+    flex-grow: 1;
+    padding: 15px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.message {
+    max-width: 80%;
+    padding: 10px 15px;
+    border-radius: 15px;
+    margin: 5px 0;
+    word-wrap: break-word;
+}
+
+.user-message {
+    background-color: #007bff;
+    color: white;
+    align-self: flex-end;
+    border-bottom-right-radius: 5px;
+}
+
+.ai-message {
+    background-color: #f0f2f5;
+    color: #1c1e21;
+    align-self: flex-start;
+    border-bottom-left-radius: 5px;
+}
+
+.cozy-input-area {
+    padding: 15px;
+    border-top: 1px solid #eee;
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+}
+
+#cozyMessageInput {
+    flex-grow: 1;
+    border: 1px solid #ddd;
+    border-radius: 20px;
+    padding: 10px 15px;
+    resize: none;
+    max-height: 100px;
+    font-family: inherit;
+}
+
+#cozyMessageInput:focus {
+    outline: none;
+    border-color: #007bff;
+}
+
+#cozySendButton {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+#cozySendButton:hover {
+    background-color: #0056b3;
+}
+
+/* 스크롤바 스타일링 */
+.cozy-message-area::-webkit-scrollbar {
+    width: 6px;
+}
+
+.cozy-message-area::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.cozy-message-area::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 3px;
+}
+
+.cozy-message-area::-webkit-scrollbar-thumb:hover {
+    background: #555;
+} 

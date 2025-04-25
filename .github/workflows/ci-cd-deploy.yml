@@ -26,9 +26,9 @@ jobs:
         uses: w9jds/firebase-action@v2.2.0
         with:
           args: deploy --only hosting
-        # **Ensure the following GitHub Secrets are set in your repo settings**
-# FIREBASE_TOKEN: Firebase CI token (run `firebase login:ci` locally to generate)
-# FIREBASE_PROJECT_ID: your Firebase project ID
         env:
+          # Ensure the following GitHub Secrets are set in your repo settings:
+          # FIREBASE_TOKEN: Firebase CI token (generate with `firebase login:ci` locally)
+          # FIREBASE_PROJECT_ID: Firebase project ID
           FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
-          PROJECT_ID:        ${{ secrets.FIREBASE_PROJECT_ID }}
+          PROJECT_ID:    ${{ secrets.FIREBASE_PROJECT_ID }}

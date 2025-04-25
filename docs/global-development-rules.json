@@ -3,6 +3,13 @@
   "scope": "universal",
   "rules": {
     "permissions": {
+      "pre_approval_principle": {
+        "rule": "모든 파일 생성 및 수정은 사전 협의 및 승인 필수",
+        "priority": 0,
+        "description": "1. 적용 범위:\n   - 모든 신규 파일 생성\n   - 모든 기존 파일 수정\n2. 승인 절차:\n   - 개발자는 코딩 작업 전 변경 내용과 이유를 상세히 설명\n   - 관리자의 검토 및 승인 완료 후에만 코딩 수행\n3. 예외 사항:\n   - 예외 없이 모든 개발 작업에 적용",
+        "scope": "universal",
+        "enforcement": "strict"
+      },
       "file_modification": {
         "rule": "사용자의 명시적인 확인 없이는 파일을 삭제하거나 수정할 수 없음",
         "priority": 1,

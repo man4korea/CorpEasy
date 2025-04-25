@@ -3,12 +3,13 @@
     "public": "public",
     "ignore": [
       "firebase.json",
-      "**/.*",
-      "**/node_modules/**"
+      "**/.*"
     ],
     "rewrites": [
-      { "source": "/components/**", "destination": "/components/:splat" },
-      { "source": "**",            "destination": "/index.html" }
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
     ]
   }
 }

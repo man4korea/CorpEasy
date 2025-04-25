@@ -1,5 +1,5 @@
-// 📁 js/app.js
-// Create at 2504251015 Ver1.2
+// 📁 public/js/app.js
+// Create at 2504251015 Ver1.3
 
 // Cozy 채팅 모듈 import (모듈은 반드시 최상단에)
 import { initializeCozyChat } from './cozy.js';
@@ -11,9 +11,7 @@ import { initializeCozyChat } from './cozy.js';
 document.addEventListener('click', (e) => {
   if (e.target.closest('#cozyButton')) {
     const chat = document.getElementById('cozyChat');
-    if (chat) {
-      chat.classList.toggle('show');
-    }
+    if (chat) chat.classList.toggle('show');
   }
 });
 
@@ -36,10 +34,10 @@ function initializeElements() {
     hasSubmenuItems: document.querySelectorAll('.has-submenu')
   };
 
-  // 요소가 없으면 에러 로그
-  Object.entries(elements).forEach(([key, element]) => {
-    if (!element && key !== 'notificationToggle' && key !== 'notificationDropdown' && key !== 'userMenuToggle' && key !== 'userDropdown') {
-      console.warn(`Element not found: ${key}`);
+  // 요소가 없으면 디버그 레벨로 로깅
+  Object.entries(elements).forEach(([key, el]) => {
+    if (!el && !['notificationToggle','notificationDropdown','userMenuToggle','userDropdown'].includes(key)) {
+      console.debug(`Element not found: ${key}`);
     }
   });
 
@@ -48,11 +46,10 @@ function initializeElements() {
 
 // 사이드바 초기화
 function initializeSidebar() {
-  const elements = initializeElements();
-  const { sidebar, sidebarToggle, sidebarOverlay, closeSidebarBtn } = elements;
+  const { sidebar, sidebarToggle, sidebarOverlay, closeSidebarBtn } = initializeElements();
 
   if (!sidebar || !sidebarToggle || !sidebarOverlay) {
-    console.warn('Sidebar elements not found');
+    console.debug('Sidebar elements missing, skipping initialization');
     return;
   }
 
@@ -62,12 +59,10 @@ function initializeSidebar() {
     sidebarOverlay.classList.add('active');
   });
 
-  if (closeSidebarBtn) {
-    closeSidebarBtn.addEventListener('click', () => {
-      sidebar.classList.remove('active');
-      sidebarOverlay.classList.remove('active');
-    });
-  }
+  closeSidebarBtn?.addEventListener('click', () => {
+    sidebar.classList.remove('active');
+    sidebarOverlay.classList.remove('active');
+  });
 
   sidebarOverlay.addEventListener('click', () => {
     sidebar.classList.remove('active');
@@ -75,27 +70,24 @@ function initializeSidebar() {
   });
 
   // 서브메뉴 토글
-  document.querySelectorAll('.has-submenu').forEach(submenu => {
-    const menuItem = submenu.querySelector('.menu-item');
-    if (menuItem) {
-      menuItem.addEventListener('click', (e) => {
-        e.preventDefault();
-        submenu.classList.toggle('active');
-      });
-    }
+  document.querySelectorAll('.has-submenu').forEach(sub => {
+    const menuItem = sub.querySelector('.menu-item');
+    menuItem?.addEventListener('click', e => {
+      e.preventDefault();
+      sub.classList.toggle('active');
+    });
   });
 }
 
 // 컴포넌트가 로드된 후 이벤트 핸들러 초기화
 function initializeAfterLoad() {
   try {
-    // 사이드바 초기화
     initializeSidebar();
 
     // Cozy 채팅 안정적 초기화 (500ms 간격 재시도)
     const tryInitCozy = () => {
       if (!initializeCozyChat()) {
-        console.warn('Cozy 초기화 실패. 500ms 후 재시도');
+        console.debug('Cozy 초기화 실패, 500ms 후 재시도');
         setTimeout(tryInitCozy, 500);
       }
     };
@@ -112,19 +104,15 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // 컴포넌트가 동적으로 로드될 때마다 이벤트 핸들러 재초기화
-const observer = new MutationObserver((mutations) => {
-  for (const mutation of mutations) {
-    if (mutation.addedNodes.length) {
+const observer = new MutationObserver(mutations => {
+  for (const m of mutations) {
+    if (m.addedNodes.length) {
       setTimeout(initializeAfterLoad, 100);
       break;
     }
   }
 });
-
-observer.observe(document.body, {
-  childList: true,
-  subtree: true
-});
+observer.observe(document.body, { childList: true, subtree: true });
 
 // 전역 노출
 window.initializeAfterLoad = initializeAfterLoad;

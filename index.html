@@ -6,6 +6,8 @@
     <title>CorpEasy - YouTube Content Analyzer</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="css/styles.css">
+    <!-- 기준 경로 설정: relative paths for components -->
+    <base href="./">
 </head>
 <body>
     <div id="app">
@@ -72,10 +74,10 @@
         async function loadAllComponents() {
             try {
                 const results = await Promise.all([
-                    loadComponent('/components/Header.html', 'headerComponent'),
-                    loadComponent('/components/Sidebar.html', 'sidebarComponent'),
-                    loadComponent('/components/Dashboard.html', 'dashboardComponent'),
-                    loadComponent('/components/Cozy.html', 'cozyComponent')
+                    loadComponent('components/Header.html', 'headerComponent'),
+                    loadComponent('components/Sidebar.html', 'sidebarComponent'),
+                    loadComponent('components/Dashboard.html', 'dashboardComponent'),
+                    loadComponent('components/Cozy.html', 'cozyComponent')
                 ]);
 
                 // 모든 컴포넌트가 성공적으로 로드되었는지 확인
@@ -99,4 +101,4 @@
         document.addEventListener('DOMContentLoaded', loadAllComponents);
     </script>
 </body>
-</html> 
+</html>

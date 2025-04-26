@@ -1,0 +1,40 @@
+<!-- 📁 test.html -->
+<!-- Create at 2504272245 Ver1.00 -->
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>Test Page</title>
+</head>
+<body>
+
+  <h1>테스트 페이지</h1>
+
+  <input type="text" id="inputBox" placeholder="여기에 입력하세요">
+  <button id="runButton">실행</button>
+
+  <div id="output" style="margin-top: 20px; font-size: 18px; color: red;"></div>
+
+  <script>
+    const input = document.getElementById('inputBox');
+    const button = document.getElementById('runButton');
+    const output = document.getElementById('output');
+
+    function showMessage() {
+      output.textContent = "이거 참! 한심한 일이다. 내가 코딩을 배워 직접 짜야 하나? 헐";
+    }
+
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        showMessage();
+      }
+    });
+
+    button.addEventListener('click', () => {
+      showMessage();
+    });
+  </script>
+
+</body>
+</html>

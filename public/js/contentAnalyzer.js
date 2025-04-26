@@ -1,14 +1,37 @@
 // 📁 public/js/contentAnalyzer.js
-// Create at 2504251030 Ver1.2
+// Create at 2504262310 Ver1.3
 
 /**
  * 콘텐츠 상세분석기 - YouTube 자막 추출 기능
  * 
- * 이 모듈은 YouTube URL을 입력받아 백엔드 API를 통해 
- * 자막과 메타데이터를 추출하는 기능을 담당합니다.
+ * 이 모듈은 YouTube URL을 입력받아 자막을 추출하는 기능을 담당합니다.
  */
 
-document.addEventListener('DOMContentLoaded', () => {
+// 유틸리티 함수들을 먼저 정의
+function decodeHtmlEntities(text) {
+    const entities = {
+        '&quot;': '"',
+        '&amp;': '&',
+        '&lt;': '<',
+        '&gt;': '>',
+        '&#39;': "'",
+        '&apos;': "'",
+    };
+    return text.replace(/&quot;|&amp;|&lt;|&gt;|&#39;|&apos;/g, match => entities[match]);
+}
+
+function formatTime(ms) {
+    const seconds = Math.floor(ms / 1000);
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = seconds % 60;
+    return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+}
+
+// 이벤트 리스너 초기화 함수
+function initializeEventListeners() {
+    console.log('ContentAnalyzer: 이벤트 리스너 초기화');
+
     // DOM 요소 참조
     const inputValue = document.getElementById('inputValue');
     const analyzeBtn = document.getElementById('analyzeBtn');
@@ -19,113 +42,133 @@ document.addEventListener('DOMContentLoaded', () => {
     const captionsOutput = document.getElementById('captionsOutput');
     const errorMessage = document.getElementById('errorMessage');
 
-    // 분석 시작 버튼 클릭 이벤트 리스너
-    analyzeBtn.addEventListener('click', handleAnalyzeClick);
-    
-    // 엔터 키 처리
-    inputValue.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            handleAnalyzeClick();
-        }
-    });
+    // DOM 요소 존재 확인
+    if (!inputValue || !analyzeBtn || !spinner || !resultsContainer || 
+        !videoTitle || !videoUrl || !captionsOutput || !errorMessage) {
+        console.error('ContentAnalyzer: 필요한 DOM 요소를 찾을 수 없습니다');
+        return;
+    }
 
-    // 입력 필드 변경 시 에러 메시지 숨기기
-    inputValue.addEventListener('input', () => {
-        errorMessage.style.display = 'none';
-    });
-
-    /**
-     * 분석 처리 함수
-     */
+    // 분석 버튼 클릭 이벤트 핸들러
     async function handleAnalyzeClick() {
-        // 입력값 검증
         const url = inputValue.value.trim();
         if (!url) {
+            errorMessage.textContent = 'URL을 입력해주세요.';
             errorMessage.style.display = 'block';
             inputValue.focus();
             return;
         }
 
-        // YouTube URL 검증
         if (!url.includes('youtube.com/watch') && !url.includes('youtu.be/')) {
             errorMessage.textContent = '유효한 YouTube URL을 입력해주세요.';
             errorMessage.style.display = 'block';
             return;
         }
 
-        // UI 업데이트: 로딩 상태 표시
         setLoading(true);
         errorMessage.style.display = 'none';
         resultsContainer.style.display = 'none';
         
         try {
-            // 백엔드 API 호출
-            const response = await fetch('/api/extract-captions', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ url: url })
-            });
-
-            // 응답 처리
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || '분석 중 오류가 발생했습니다.');
-            }
-
-            const data = await response.json();
+            // 테스트용 더미 데이터 반환 (실제 API 연동 전)
+            const dummyData = {
+                title: `유튜브 비디오: ${getVideoTitle(url)}`,
+                url: url,
+                captions: getDummyCaptions()
+            };
             
-            // 결과 표시
-            displayResults(data);
+            // 0.5초 지연 후 결과 표시 (로딩 효과 시뮬레이션)
+            setTimeout(() => {
+                displayResults(dummyData);
+                setLoading(false);
+            }, 500);
         } catch (error) {
-            console.error('Error:', error);
+            console.error('처리 중 오류 발생:', error);
             errorMessage.textContent = error.message || '처리 중 오류가 발생했습니다.';
             errorMessage.style.display = 'block';
             resultsContainer.style.display = 'none';
-        } finally {
-            // 로딩 상태 해제
             setLoading(false);
         }
     }
 
-    /**
-     * 로딩 상태 설정
-     * @param {boolean} isLoading - 로딩 중 여부
-     */
+    // 이벤트 리스너 설정
+    analyzeBtn.addEventListener('click', handleAnalyzeClick);
+    
+    inputValue.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            handleAnalyzeClick();
+        }
+    });
+
+    inputValue.addEventListener('paste', () => {
+        // URL 붙여넣기 후 약간의 지연을 두고 자동 분석
+        setTimeout(handleAnalyzeClick, 100);
+    });
+
+    inputValue.addEventListener('input', () => {
+        errorMessage.style.display = 'none';
+    });
+
+    // 로딩 상태 설정 함수
     function setLoading(isLoading) {
         spinner.style.display = isLoading ? 'inline-block' : 'none';
         analyzeBtn.disabled = isLoading;
         inputValue.disabled = isLoading;
-        analyzeBtn.style.cursor = isLoading ? 'wait' : 'pointer';
-        if (isLoading) {
-            analyzeBtn.textContent = '분석 중...';
-        } else {
-            analyzeBtn.innerHTML = '분석 시작<div id="spinner" class="spinner ml-2" style="display: none;"></div>';
+        analyzeBtn.textContent = isLoading ? '분석 중...' : '분석 시작';
+    }
+
+    // 결과 표시 함수
+    function displayResults(data) {
+        videoTitle.textContent = data.title || '제목 없음';
+        videoUrl.href = data.url || '#';
+        videoUrl.style.display = data.url ? 'inline-block' : 'none';
+        captionsOutput.textContent = data.captions || '자막이 없습니다.';
+        
+        resultsContainer.style.display = 'block';
+    }
+
+    // 테스트용 함수: URL에서 비디오 제목 추출 (실제 구현에서는 API 사용)
+    function getVideoTitle(url) {
+        try {
+            // YouTube URL에서 비디오 ID 추출
+            let videoId;
+            if (url.includes('youtube.com/watch')) {
+                videoId = new URL(url).searchParams.get('v');
+            } else if (url.includes('youtu.be/')) {
+                videoId = url.split('youtu.be/')[1]?.split('?')[0];
+            }
+            return videoId ? `Video ID: ${videoId}` : '알 수 없는 비디오';
+        } catch (e) {
+            return '비디오 제목 추출 실패';
         }
     }
 
-    /**
-     * 결과 데이터 표시
-     * @param {Object} data - 백엔드에서 받은 결과 데이터
-     */
-    function displayResults(data) {
-        // 제목 설정
-        videoTitle.textContent = data.title || '제목 없음';
-        
-        // URL 링크 설정
-        videoUrl.href = data.url || '#';
-        videoUrl.style.display = data.url ? 'inline-block' : 'none';
-        
-        // 자막 내용 설정
-        captionsOutput.textContent = data.captions || '자막이 없습니다.';
-        
-        // 결과 컨테이너 표시 (부드러운 전환 효과)
-        resultsContainer.style.opacity = '0';
-        resultsContainer.style.display = 'block';
-        setTimeout(() => {
-            resultsContainer.style.opacity = '1';
-            resultsContainer.style.transition = 'opacity 0.3s ease-in-out';
-        }, 50);
+    // 테스트용 더미 자막 생성
+    function getDummyCaptions() {
+        return `[00:00:03] 안녕하세요, 유튜브 영상입니다.
+[00:00:07] 이것은 테스트 자막입니다.
+[00:00:12] 실제 구현에서는 YouTube API를 통해 자막을 가져올 예정입니다.
+[00:00:18] 현재는 기본 기능 동작 확인을 위한 더미 데이터입니다.
+[00:00:25] 이 기능이 정상 동작하면 다음 단계로 실제 API 연동을 진행하겠습니다.
+[00:00:32] 감사합니다.`;
     }
+}
+
+// 컴포넌트 로드 시 초기화
+document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(initializeEventListeners, 100);
 });
+
+// 컴포넌트가 동적으로 로드될 때 초기화
+window.addEventListener('component-loaded', function() {
+    setTimeout(initializeEventListeners, 100);
+});
+
+// 전역 스코프에 초기화 함수 노출
+window.initializeContentAnalyzer = initializeEventListeners;
+
+// 페이지 로드 시 직접 호출 시도
+if (document.readyState === 'complete' || document.readyState === 'interactive') {
+    setTimeout(initializeEventListeners, 100);
+}

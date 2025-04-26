@@ -1,5 +1,5 @@
 <!-- 📁 public/index.html -->
-<!-- Create at 2504251705 Ver1.00 -->
+<!-- Create at 2504270445 Ver1.01 -->
 
 <!DOCTYPE html>
 <html lang="ko">
@@ -12,6 +12,12 @@
     <!-- 기준 경로 설정: 컴포넌트 상대 로드 보장 -->
     <base href="./">
     <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Malgun Gothic", "맑은 고딕", helvetica, "Apple SD Gothic Neo", sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
         /* ContentAnalyzer 전용 타이틀 및 텍스트 여백 - 간격 최소화 */
         #contentAnalyzerComponent h1 {
             margin: 20px 0 0 20px; /* 상단 여백 축소 */
@@ -26,36 +32,11 @@
         <!-- Component Containers -->
         <div id="headerComponent"></div>
         <div id="sidebarComponent"></div>
-        <div id="dashboardComponent"></div>
+        <div id="dashboardComponent" class="main-content"></div>
         <!-- 콘텐츠 상세분석기용 컨테이너 추가 -->
-        <div id="contentAnalyzerComponent" style="display:none;"></div>
+        <div id="contentAnalyzerComponent" class="main-content" style="display:none;"></div>
         <div id="cozyComponent"></div>
     </div>
-
-    <!-- Firebase SDK -->
-    <script type="module">
-        import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js';
-        import { getAuth } from 'https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js';
-        import { getFirestore } from 'https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js';
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyCHrjpHntRG_x3o4SeAnQznwlZREzXVX6A",
-            authDomain: "corpeasy-c69bb.firebaseapp.com",
-            projectId: "corpeasy-c69bb",
-            storageBucket: "corpeasy-c69bb.appspot.com",
-            messagingSenderId: "678996911607",
-            appId: "1:678996911607:web:d2d4e777516dde82a6faf2",
-            measurementId: "G-47XDDVVQWN"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-
-        window.firebaseApp = app;
-        window.firebaseAuth = auth;
-        window.firebaseDB = db;
-    </script>
 
     <!-- 컴포넌트 로드 스크립트 -->
     <script type="module">
@@ -65,8 +46,34 @@
                 if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                 const html = await response.text();
                 const target = document.getElementById(targetId);
+                if (!target) {
+                    console.error(`Target element not found: ${targetId}`);
+                    return false;
+                }
                 target.innerHTML = html;
                 target.style.display = 'block';
+
+                // 컴포넌트의 스크립트 태그 실행
+                const scripts = target.getElementsByTagName('script');
+                for (let script of scripts) {
+                    if (script.type === 'module') {
+                        const newScript = document.createElement('script');
+                        newScript.type = 'module';
+                        newScript.textContent = script.textContent;
+                        script.parentNode.replaceChild(newScript, script);
+                    } else {
+                        const newScript = document.createElement('script');
+                        Array.from(script.attributes).forEach(attr => {
+                            newScript.setAttribute(attr.name, attr.value);
+                        });
+                        newScript.textContent = script.textContent;
+                        script.parentNode.replaceChild(newScript, script);
+                    }
+                }
+
+                // 컴포넌트 로드 완료 후 이벤트 발생
+                window.dispatchEvent(new Event('component-loaded'));
+                
                 return true;
             } catch (error) {
                 console.error(`컴포넌트 로드 실패 (${url}):`, error);
@@ -90,17 +97,11 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             loadAllComponents();
-            // 사이드바 메뉴 클릭 시 ContentAnalyzer 로드 - 테스트 텍스트 삽입 제거
-            document.querySelector('.sidebar-nav li:nth-child(2) .menu-item')?.addEventListener('click', e => {
-                e.preventDefault();
-                document.getElementById('dashboardComponent').style.display = 'none';
-                loadComponent('components/ContentAnalyzer.html', 'contentAnalyzerComponent');
-                // 테스트 텍스트 삽입 부분 제거
-            });
+            // ContentAnalyzer에 대한 개별 이벤트 핸들러 제거 (app.js로 통합)
         });
     </script>
 
-    <!-- App Scripts: 컴포넌트 로드 후 초기화 로직 -->
+    <!-- App Scripts -->
     <script type="module" src="js/app.js"></script>
 </body>
 </html>

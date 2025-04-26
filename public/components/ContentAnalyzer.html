@@ -1,83 +1,71 @@
 <!-- 📁 public/components/ContentAnalyzer.html -->
-<!-- Create at 2504262215 Ver1.15 -->
+<!-- Create at 2504272350 Ver1.52 -->
 
 <div class="main-container">
     <div class="title-container">
-        <h1>콘텐츠 상세분석기</h1>
+      <h1>콘텐츠 상세분석기</h1>
     </div>
-    
+  
     <div class="form-card">
-        <div class="input-row">
-            <label class="form-label input-label">분석할 대상</label>
-            <input
-                type="text"
-                id="inputValue"
-                class="form-input"
-                placeholder="분석하실 URL주소나 대상단어를 입력해주세요"
-            />
-            <button id="analyzeBtn" class="btn btn-primary">
-                분석 시작
-                <div id="spinner" class="spinner" style="display: none;"></div>
-            </button>
-        </div>
+      <div class="input-row">
+        <label class="form-label input-label">분석할 대상</label>
+        <input
+          type="text"
+          id="inputValue"
+          class="form-input"
+          placeholder="YouTube URL을 입력하세요"
+        />
+        <button id="analyzeButton" type="button" class="btn btn-primary">
+          분석 시작
+        </button>
+      </div>
     </div>
-        <div id="errorMessage" class="error-message"></div>
-
-        <div id="resultsContainer" class="card results-container">
-            <div class="card-header">
-                <h2 id="videoTitle" class="card-title">비디오 제목</h2>
-                <a id="videoUrl" href="#" target="_blank" class="link">원본 URL 보기</a>
-            </div>
-
-            <div class="captions-container">
-                <pre id="captionsOutput" class="captions-text"></pre>
-            </div>
-        </div>
-   
-</div>
-
-<style>
-
-/* 결과 컨테이너 */
-.results-container {
-    display: none; /* 초기에 숨김 */
-    margin-top: 20px;
-}
-
-/* 캡션 컨테이너 */
-.captions-container {
-    background-color: white;
-    border: 1px solid var(--border-primary);
-    border-radius: var(--radius-md);
-    padding: var(--spacing-4);
-    max-height: 500px;
-    overflow-y: auto;
-    margin-top: var(--spacing-4);
-}
-
-.captions-text {
-    white-space: pre-wrap;
-    font-size: var(--text-sm);
-    line-height: 1.6;
-    margin: 0;
-    color: var(--text-primary);
-}
-
-/* 오류 메시지 */
-.error-message {
-    color: var(--danger);
-    font-size: var(--text-sm);
-    margin-top: var(--spacing-2);
-    min-height: 20px;
-}
-
-/* 버튼 내부 스피너 */
-.btn .spinner {
-    width: 16px;
-    height: 16px;
-    border: 2px solid var(--text-light);
-    border-top: 2px solid transparent;
-}
-</style>
-
-<script type="module" src="/js/contentAnalyzer.js"></script>
+  
+    <div id="resultContainer" style="margin-top: 20px; padding: 15px; border: 1px solid #ddd; display: none;">
+      <h3>더미 자막 데이터</h3>
+      <pre id="dummyText" style="white-space: pre-wrap; font-size: 14px; line-height: 1.5;"></pre>
+    </div>
+  </div>
+  
+  <script>
+  function initializeContentAnalyzer() {
+    const input = document.getElementById('inputValue');
+    const button = document.getElementById('analyzeButton');
+    const resultContainer = document.getElementById('resultContainer');
+    const dummyText = document.getElementById('dummyText');
+  
+    function showDummyData(event) {
+      event.preventDefault();
+      const value = input.value.trim();
+      if (value) {
+        dummyText.textContent = `
+  [00:00:03] 안녕하세요, 유튜브 영상입니다.
+  [00:00:07] 이것은 테스트 자막입니다.
+  [00:00:12] 실제 구현에서는 YouTube API를 통해 자막을 가져올 예정입니다.
+  [00:00:18] 현재는 기본 기능 동작 확인을 위한 더미 데이터입니다.
+  [00:00:25] 이 기능이 정상 동작하면 다음 단계로 실제 API 연동을 진행하겠습니다.
+  [00:00:32] 감사합니다.
+        `;
+        resultContainer.style.display = 'block';
+      }
+    }
+  
+    if (input && button) {
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          showDummyData(e);
+        }
+      });
+  
+      button.addEventListener('click', (e) => {
+        showDummyData(e);
+      });
+    }
+  }
+  
+  // 페이지 전체가 아니라, 컴포넌트가 로드될 때 초기화
+  window.addEventListener('component-loaded', () => {
+    initializeContentAnalyzer();
+  });
+  </script>
+  

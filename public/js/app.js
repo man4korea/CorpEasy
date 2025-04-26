@@ -1,5 +1,5 @@
 // 📁 public/js/app.js
-// Create at 2504251115 Ver1.4
+// Create at 2504270455 Ver1.7
 
 // Cozy 채팅 모듈 import (모듈은 반드시 최상단에)
 import { initializeCozyChat } from './cozy.js';
@@ -14,10 +14,6 @@ document.addEventListener('click', (e) => {
     if (chat) chat.classList.toggle('show');
   }
 });
-
-// Firebase 서비스
-const auth = window.firebaseAuth;
-const db = window.firebaseDB;
 
 // DOM 요소들을 가져오는 함수
 function initializeElements() {
@@ -45,29 +41,92 @@ function initializeElements() {
 }
 
 /**
+ * 사이드바 닫기 함수
+ */
+function closeSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const sidebarOverlay = document.getElementById('sidebarOverlay');
+  if (sidebar && sidebarOverlay) {
+    sidebar.classList.remove('active');
+    sidebarOverlay.classList.remove('active');
+  }
+}
+
+/**
+ * 동적으로 로드된 스크립트 실행 함수
+ * @param {HTMLElement} container - 스크립트를 포함하는 컨테이너 요소
+ */
+function executeScripts(container) {
+  // 기존 스크립트 태그를 찾아서 새로운 스크립트로 대체
+  const scripts = container.querySelectorAll('script');
+  scripts.forEach(oldScript => {
+    // 새 스크립트 요소 생성
+    const newScript = document.createElement('script');
+    
+    // 속성 복사
+    Array.from(oldScript.attributes).forEach(attr => {
+      newScript.setAttribute(attr.name, attr.value);
+    });
+    
+    // 내용 복사
+    newScript.innerHTML = oldScript.innerHTML;
+    
+    // 이전 스크립트 제거 후 새 스크립트 삽입
+    oldScript.parentNode.replaceChild(newScript, oldScript);
+  });
+  
+  console.log(`${scripts.length}개의 스크립트 실행됨`);
+}
+
+/**
  * 컴포넌트 로딩 함수
  * @param {string} componentName - 로드할 컴포넌트의 이름
  * @returns {Promise<boolean>} - 컴포넌트 로드 성공 여부
  */
 async function loadComponent(componentName) {
-  const mainContent = document.querySelector('.main-content');
-  if (!mainContent) {
-    console.error('Main content area not found');
+  // 컴포넌트별 컨테이너 ID 매핑
+  const containerMapping = {
+    'Dashboard': 'dashboardComponent',
+    'ContentAnalyzer': 'contentAnalyzerComponent',
+    'test': 'contentAnalyzerComponent' // 테스트용 컴포넌트도 contentAnalyzerComponent에 로드
+  };
+  
+  // 컴포넌트별 컨테이너 ID 결정
+  const containerId = containerMapping[componentName] || 'dashboardComponent';
+  const container = document.getElementById(containerId);
+  
+  if (!container) {
+    console.error(`컨테이너를 찾을 수 없음: ${containerId}`);
     return false;
   }
 
   try {
+    console.log(`${componentName} 컴포넌트 로드 시작 (컨테이너: ${containerId})`);
+    
+    // 모든 .main-content 요소 숨기기
+    document.querySelectorAll('.main-content').forEach(el => {
+      el.style.display = 'none';
+    });
+    
     // 스피너 표시
-    mainContent.innerHTML = '<div class="flex items-center justify-center" style="height: 200px;"><div class="spinner"></div></div>';
+    container.innerHTML = '<div class="flex items-center justify-center" style="height: 200px;"><div class="spinner"></div></div>';
+    container.style.display = 'block';
     
     // 컴포넌트 로드
     const response = await fetch(`/components/${componentName}.html`);
     if (!response.ok) {
-      throw new Error(`Failed to load component: ${componentName}`);
+      throw new Error(`컴포넌트 로드 실패: ${componentName} (${response.status})`);
     }
     
     const html = await response.text();
-    mainContent.innerHTML = html;
+    container.innerHTML = html;
+    
+    // 동적으로 로드된 스크립트 실행
+    executeScripts(container);
+    
+    // 컴포넌트 로드 후 이벤트 발생
+    console.log(`컴포넌트 ${componentName} 로드 완료, component-loaded 이벤트 발생`);
+    window.dispatchEvent(new Event('component-loaded'));
     
     // 사이드바 메뉴 활성화 상태 업데이트
     document.querySelectorAll('.sidebar-nav li').forEach(item => {
@@ -80,17 +139,12 @@ async function loadComponent(componentName) {
     }
     
     // 모바일에서 사이드바 닫기
-    const sidebar = document.getElementById('sidebar');
-    const sidebarOverlay = document.getElementById('sidebarOverlay');
-    if (window.innerWidth < 768 && sidebar && sidebarOverlay) {
-      sidebar.classList.remove('active');
-      sidebarOverlay.classList.remove('active');
-    }
+    closeSidebar();
     
     return true;
   } catch (error) {
-    console.error('Error loading component:', error);
-    mainContent.innerHTML = `<div class="alert alert-danger">컴포넌트를 로드하는 중 오류가 발생했습니다: ${error.message}</div>`;
+    console.error('컴포넌트 로드 오류:', error);
+    container.innerHTML = `<div class="alert alert-danger">컴포넌트를 로드하는 중 오류가 발생했습니다: ${error.message}</div>`;
     return false;
   }
 }
@@ -112,15 +166,9 @@ function initializeSidebar() {
     });
   }
 
-  closeSidebarBtn?.addEventListener('click', () => {
-    sidebar.classList.remove('active');
-    sidebarOverlay.classList.remove('active');
-  });
+  closeSidebarBtn?.addEventListener('click', closeSidebar);
 
-  sidebarOverlay.addEventListener('click', () => {
-    sidebar.classList.remove('active');
-    sidebarOverlay.classList.remove('active');
-  });
+  sidebarOverlay.addEventListener('click', closeSidebar);
 
   // 서브메뉴 토글
   document.querySelectorAll('.has-submenu').forEach(sub => {
@@ -141,6 +189,9 @@ function initializeSidebar() {
       e.preventDefault();
       const componentName = item.getAttribute('data-component');
       if (componentName) {
+        // 먼저 사이드바 닫기
+        closeSidebar();
+        // 그 다음 컴포넌트 로드
         loadComponent(componentName);
       }
     });
@@ -151,9 +202,28 @@ function initializeSidebar() {
   if (contentAnalyzerLink && !contentAnalyzerLink.hasAttribute('data-component')) {
     contentAnalyzerLink.addEventListener('click', (e) => {
       e.preventDefault();
+      // 먼저 사이드바 닫기
+      closeSidebar();
+      // 그 다음 컴포넌트 로드
       loadComponent('ContentAnalyzer');
     });
   }
+
+  // 문서 클릭 이벤트 - 사이드바 외부 클릭 시 사이드바 닫기
+  document.addEventListener('click', (e) => {
+    // 사이드바와 토글 버튼이 아닌 곳을 클릭했을 때
+    if (!e.target.closest('#sidebar') && !e.target.closest('#sidebarToggle')) {
+      closeSidebar();
+    }
+  });
+
+  // 마우스 이동 이벤트 - 사이드바 외부로 마우스 이동 시 사이드바 닫기
+  document.addEventListener('mousemove', (e) => {
+    // 사이드바와 토글 버튼이 아닌 곳으로 마우스 이동했을 때
+    if (!e.target.closest('#sidebar') && !e.target.closest('#sidebarToggle')) {
+      closeSidebar();
+    }
+  });
 }
 
 // 컴포넌트가 로드된 후 이벤트 핸들러 초기화
@@ -172,10 +242,9 @@ function initializeAfterLoad() {
 
     // 기본 컴포넌트 로드 (현재 없는 경우)
     if (document.querySelector('.main-content') && 
-        document.querySelector('.main-content').children.length === 0) {
+        document.querySelectorAll('.main-content[style*="display: block"]').length === 0) {
       loadComponent('Dashboard');
     }
-
   } catch (error) {
     console.error('초기화 중 오류 발생:', error);
   }

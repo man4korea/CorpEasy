@@ -1,0 +1,83 @@
+<!-- 📁 public/components/ContentAnalyzer.html -->
+<!-- Create at 2504262215 Ver1.15 -->
+
+<div class="main-container">
+    <div class="title-container">
+        <h1>콘텐츠 상세분석기</h1>
+    </div>
+    
+    <div class="form-card">
+        <div class="input-row">
+            <label class="form-label input-label">분석할 대상</label>
+            <input
+                type="text"
+                id="inputValue"
+                class="form-input"
+                placeholder="분석하실 URL주소나 대상단어를 입력해주세요"
+            />
+            <button id="analyzeBtn" class="btn btn-primary">
+                분석 시작
+                <div id="spinner" class="spinner" style="display: none;"></div>
+            </button>
+        </div>
+    </div>
+        <div id="errorMessage" class="error-message"></div>
+
+        <div id="resultsContainer" class="card results-container">
+            <div class="card-header">
+                <h2 id="videoTitle" class="card-title">비디오 제목</h2>
+                <a id="videoUrl" href="#" target="_blank" class="link">원본 URL 보기</a>
+            </div>
+
+            <div class="captions-container">
+                <pre id="captionsOutput" class="captions-text"></pre>
+            </div>
+        </div>
+   
+</div>
+
+<style>
+
+/* 결과 컨테이너 */
+.results-container {
+    display: none; /* 초기에 숨김 */
+    margin-top: 20px;
+}
+
+/* 캡션 컨테이너 */
+.captions-container {
+    background-color: white;
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-4);
+    max-height: 500px;
+    overflow-y: auto;
+    margin-top: var(--spacing-4);
+}
+
+.captions-text {
+    white-space: pre-wrap;
+    font-size: var(--text-sm);
+    line-height: 1.6;
+    margin: 0;
+    color: var(--text-primary);
+}
+
+/* 오류 메시지 */
+.error-message {
+    color: var(--danger);
+    font-size: var(--text-sm);
+    margin-top: var(--spacing-2);
+    min-height: 20px;
+}
+
+/* 버튼 내부 스피너 */
+.btn .spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--text-light);
+    border-top: 2px solid transparent;
+}
+</style>
+
+<script type="module" src="/js/contentAnalyzer.js"></script>

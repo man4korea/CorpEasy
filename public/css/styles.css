@@ -86,6 +86,7 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+    user-select: text; /* 복사 기능 명시적 허용 */
 }
 
 body {
@@ -94,6 +95,7 @@ body {
     line-height: 1.5;
     color: var(--text-primary);
     background-color: var(--bg-secondary);
+    user-select: text; /* 복사 기능 명시적 허용 */
 }
 
 /* ==========================================================================

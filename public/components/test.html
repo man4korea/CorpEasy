@@ -1,40 +1,73 @@
-<!-- 📁 test.html -->
-<!-- Create at 2504272245 Ver1.00 -->
+<!-- 📁 public/components/ContentAnalyzer.html -->
+<!-- Create at 2504272350 Ver1.52 -->
 
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-  <meta charset="UTF-8">
-  <title>Test Page</title>
-</head>
-<body>
-
-  <h1>테스트 페이지</h1>
-
-  <input type="text" id="inputBox" placeholder="여기에 입력하세요">
-  <button id="runButton">실행</button>
-
-  <div id="output" style="margin-top: 20px; font-size: 18px; color: red;"></div>
-
+<div class="main-container">
+    <div class="title-container">
+      <h1>콘텐츠 상세분석기</h1>
+    </div>
+  
+    <div class="form-card">
+      <div class="input-row">
+        <label class="form-label input-label">분석할 대상</label>
+        <input
+          type="text"
+          id="inputValue"
+          class="form-input"
+          placeholder="YouTube URL을 입력하세요"
+        />
+        <button id="analyzeBtn" type="button" class="btn btn-primary">
+          분석 시작
+        </button>
+      </div>
+    </div>
+  
+    <div id="resultContainer" style="margin-top: 20px; padding: 15px; border: 1px solid #ddd; display: none;">
+      <h3>더미 자막 데이터</h3>
+      <pre id="dummyText" style="white-space: pre-wrap; font-size: 14px; line-height: 1.5;"></pre>
+    </div>
+  </div>
+  
   <script>
-    const input = document.getElementById('inputBox');
-    const button = document.getElementById('runButton');
-    const output = document.getElementById('output');
-
-    function showMessage() {
-      output.textContent = "이거 참! 한심한 일이다. 내가 코딩을 배워 직접 짜야 하나? 헐";
-    }
-
-    input.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        showMessage();
+  function initializeContentAnalyzer() {
+    const inputValue = document.getElementById('inputValue'); 
+    const analyzeBtn = document.getElementById('analyzeBtn');
+    const resultContainer = document.getElementById('resultContainer');
+    
+    const dummyText = document.getElementById('dummyText');
+  
+    function showDummyData(event) {
+      event.preventDefault();
+      const value = input.value.trim();
+      if (value) {
+        dummyText.textContent = `
+  [00:00:03] 안녕하세요, 유튜브 영상입니다.
+  [00:00:07] 이것은 테스트 자막입니다.
+  [00:00:12] 실제 구현에서는 YouTube API를 통해 자막을 가져올 예정입니다.
+  [00:00:18] 현재는 기본 기능 동작 확인을 위한 더미 데이터입니다.
+  [00:00:25] 이 기능이 정상 동작하면 다음 단계로 실제 API 연동을 진행하겠습니다.
+  [00:00:32] 감사합니다.
+        `;
+        resultContainer.style.display = 'block';
       }
-    });
-
-    button.addEventListener('click', () => {
-      showMessage();
-    });
+    }
+  
+    // 이벤트 리스너 연결
+    if (input && button) {
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          callHandleAnalyzeClick(e);
+        }
+      });
+  
+      button.addEventListener('click', (e) => {
+        callHandleAnalyzeClick(e);
+      });
+    }
+  }
+  
+  // 페이지 전체가 아니라, 컴포넌트가 로드될 때 초기화
+  window.addEventListener('component-loaded', () => {
+    initializeContentAnalyzer();
+  });
   </script>
-
-</body>
-</html>
+  

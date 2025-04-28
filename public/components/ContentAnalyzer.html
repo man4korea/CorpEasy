@@ -1,71 +1,97 @@
-<!-- 📁 public/components/ContentAnalyzer.html -->
-<!-- Create at 2504272350 Ver1.52 -->
+<!-- 파일 경로: public/components/ContentAnalyzer.html -->
+<!-- Create at 2504271702 Ver1.54 -->
 
 <div class="main-container">
-    <div class="title-container">
-      <h1>콘텐츠 상세분석기</h1>
+  <div class="title-container">
+    <h1>콘텐츠 상세분석기</h1>
+  </div>
+
+  <div class="form-card">
+    <div class="input-row">
+      <label class="form-label input-label">분석할 대상</label>
+      <input
+        type="text"
+        id="inputValue"
+        class="form-input"
+        placeholder="YouTube URL을 입력하세요"
+      />
+      <button id="analyzeBtn" type="button" class="btn btn-primary">
+        분석 시작
+        <span id="spinner" class="spinner" style="display: none; margin-left: 8px;"></span>
+      </button>
     </div>
-  
-    <div class="form-card">
-      <div class="input-row">
-        <label class="form-label input-label">분석할 대상</label>
-        <input
-          type="text"
-          id="inputValue"
-          class="form-input"
-          placeholder="YouTube URL을 입력하세요"
-        />
-        <button id="analyzeButton" type="button" class="btn btn-primary">
-          분석 시작
-        </button>
-      </div>
+    <div id="errorMessage" class="alert alert-danger" style="display: none; margin-top: 10px;"></div>
+  </div>
+
+  <div id="resultsContainer" class="content-container" style="display: none; margin-top: 20px;">
+    <div style="margin-bottom: 15px;">
+      <h2 id="videoTitle" style="margin-bottom: 5px;"></h2>
+      <a id="videoUrl" href="#" target="_blank" style="color: var(--primary); display: none;">동영상 보기</a>
     </div>
-  
-    <div id="resultContainer" style="margin-top: 20px; padding: 15px; border: 1px solid #ddd; display: none;">
-      <h3>더미 자막 데이터</h3>
-      <pre id="dummyText" style="white-space: pre-wrap; font-size: 14px; line-height: 1.5;"></pre>
+    <div class="captions-container" style="max-height: 500px; overflow-y: auto; border: 1px solid #e5e7eb; padding: 15px; border-radius: 5px; background-color: #f9fafb;">
+      <pre id="captionsOutput" style="white-space: pre-wrap; font-size: 14px; line-height: 1.6; margin: 0;"></pre>
     </div>
   </div>
-  
-  <script>
-  function initializeContentAnalyzer() {
-    const input = document.getElementById('inputValue');
-    const button = document.getElementById('analyzeButton');
-    const resultContainer = document.getElementById('resultContainer');
-    const dummyText = document.getElementById('dummyText');
-  
-    function showDummyData(event) {
-      event.preventDefault();
-      const value = input.value.trim();
-      if (value) {
-        dummyText.textContent = `
-  [00:00:03] 안녕하세요, 유튜브 영상입니다.
-  [00:00:07] 이것은 테스트 자막입니다.
-  [00:00:12] 실제 구현에서는 YouTube API를 통해 자막을 가져올 예정입니다.
-  [00:00:18] 현재는 기본 기능 동작 확인을 위한 더미 데이터입니다.
-  [00:00:25] 이 기능이 정상 동작하면 다음 단계로 실제 API 연동을 진행하겠습니다.
-  [00:00:32] 감사합니다.
-        `;
-        resultContainer.style.display = 'block';
+</div>
+
+<script>
+// ContentAnalyzer 초기화 함수
+function initializeContentAnalyzer() {
+  const inputValue = document.getElementById('inputValue');
+  const analyzeBtn = document.getElementById('analyzeBtn');
+  const resultsContainer = document.getElementById('resultsContainer');
+
+  // DOM 요소 확인
+  if (!inputValue || !analyzeBtn || !resultsContainer) {
+    console.error('ContentAnalyzer: 필요한 DOM 요소를 찾을 수 없습니다');
+    return;
+  }
+
+  // 사용자 입력 현재값 검사 구문 수정
+  function callHandleAnalyzeClick(event) {
+    event.preventDefault();
+    const value = inputValue.value.trim();
+    if (value) {
+      if (typeof window.handleAnalyzeClick === 'function') {
+        window.handleAnalyzeClick();
+      } else {
+        console.error('ContentAnalyzer: 함수(handleAnalyzeClick)를 찾을 수 없습니다');
+        alert('자막 추출 기능을 로드할 수 없습니다. 페이지를 새로고침 해보세요.');
       }
     }
-  
-    if (input && button) {
-      input.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-          showDummyData(e);
-        }
-      });
-  
-      button.addEventListener('click', (e) => {
-        showDummyData(e);
-      });
-    }
   }
-  
-  // 페이지 전체가 아니라, 컴포넌트가 로드될 때 초기화
-  window.addEventListener('component-loaded', () => {
-    initializeContentAnalyzer();
+
+  // 이벤트 리스너 연결
+  inputValue.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      callHandleAnalyzeClick(e);
+    }
   });
-  </script>
-  
+
+  analyzeBtn.addEventListener('click', (e) => {
+    callHandleAnalyzeClick(e);
+  });
+}
+
+// ✅ 여기 추가!!!
+window.handleAnalyzeClick = handleAnalyzeClick;
+
+// 초기화 클래스 존재 검사 후 호출
+
+document.addEventListener('DOMContentLoaded', () => {
+  if (typeof window.initializeContentAnalyzer === 'function') {
+    window.initializeContentAnalyzer();
+  } else {
+    console.warn('ContentAnalyzer 초기화 함수가 없습니다.');
+  }
+});
+
+window.addEventListener('component-loaded', () => {
+  if (typeof window.initializeContentAnalyzer === 'function') {
+    window.initializeContentAnalyzer();
+  }
+});
+</script>
+
+<!-- 외부 JavaScript 파일 로드 -->
+<script src="/js/contentAnalyzer.js"></script>

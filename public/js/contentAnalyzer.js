@@ -1,5 +1,5 @@
 // 📁 public/js/contentAnalyzer.js
-// Create at 2504262310 Ver1.3
+// Create at 2504262310 Ver1.4
 
 /**
  * 콘텐츠 상세분석기 - YouTube 자막 추출 기능
@@ -51,6 +51,7 @@ function initializeEventListeners() {
 
     // 분석 버튼 클릭 이벤트 핸들러
     async function handleAnalyzeClick() {
+        
         const url = inputValue.value.trim();
         if (!url) {
             errorMessage.textContent = 'URL을 입력해주세요.';
@@ -70,26 +71,68 @@ function initializeEventListeners() {
         resultsContainer.style.display = 'none';
         
         try {
-            // 테스트용 더미 데이터 반환 (실제 API 연동 전)
-            const dummyData = {
-                title: `유튜브 비디오: ${getVideoTitle(url)}`,
-                url: url,
-                captions: getDummyCaptions()
-            };
+            // 비디오 ID 추출
+            let videoId;
+            if (url.includes('youtube.com/watch')) {
+                videoId = new URL(url).searchParams.get('v');
+            } else if (url.includes('youtu.be/')) {
+                videoId = url.split('youtu.be/')[1]?.split('?')[0];
+            }
+            if (!videoId) throw new Error('유효한 YouTube URL이 아닙니다.');
+
+            // 유튜브 페이지에서 자막 정보 가져오기
+            // YouTube fetch proxy URL 설정
+            const isLocal = window.location.hostname === 'localhost';
+            const proxyBaseUrl = isLocal 
+            ? 'http://localhost:3002/api/youtube-proxy'
+            : '/api/youtube-proxy'; // 배포 서버에서는 상대 경로 사용
+
+            // 분석 버튼 클릭 이벤트 핸들러 안에
+            const proxyUrl = `${proxyBaseUrl}?videoUrl=https://www.youtube.com/watch?v=${videoId}`;
+            const pageResponse = await fetch(proxyUrl);
             
-            // 0.5초 지연 후 결과 표시 (로딩 효과 시뮬레이션)
-            setTimeout(() => {
-                displayResults(dummyData);
-                setLoading(false);
-            }, 500);
+            if (!pageResponse.ok) throw new Error('YouTube 페이지를 불러올 수 없습니다.');
+            const pageText = await pageResponse.text();
+
+            // 동영상 제목 추출
+            const titleMatch = pageText.match(/"title":"(.*?)"/);
+            const title = titleMatch ? decodeHtmlEntities(titleMatch[1]) : '제목 없음';
+
+            // 자막 트랙 찾기
+            const captionTracks = pageText.match(/"captionTracks":\[(.*?)\]/);
+            if (!captionTracks) throw new Error('자막 트랙을 찾을 수 없습니다.');
+            const tracks = JSON.parse(`[${captionTracks[1]}]`);
+            // 한국어 자막 찾기
+            const koreanTrack = tracks.find(track => track.languageCode === 'ko' && (track.kind === 'asr' || track.kind === 'standard'));
+            if (!koreanTrack) throw new Error('한국어 자막을 찾을 수 없습니다.');
+            // 자막 URL 생성
+            const transcriptUrl = koreanTrack.baseUrl + '&fmt=json3';
+            // 자막 가져오기
+            const transcriptResponse = await fetch(transcriptUrl);
+            if (!transcriptResponse.ok) throw new Error('자막을 가져오는데 실패했습니다.');
+            const transcriptData = await transcriptResponse.json();
+            // 자막 텍스트 추출
+            const segments = transcriptData.events
+                .filter(event => event.segs && event.segs.length > 0)
+                .map(event => event.segs.map(seg => seg.utf8).join(''))
+                .filter(text => text.trim());
+            // 결과 표시
+            videoTitle.textContent = title;
+            videoUrl.href = url;
+            videoUrl.style.display = url ? 'inline-block' : 'none';
+            captionsOutput.textContent = segments.length ? segments.join('\n') : '자막이 없습니다.';
+            resultsContainer.style.display = 'block';
         } catch (error) {
             console.error('처리 중 오류 발생:', error);
             errorMessage.textContent = error.message || '처리 중 오류가 발생했습니다.';
             errorMessage.style.display = 'block';
             resultsContainer.style.display = 'none';
+            captionsOutput.textContent = ''; // ✅ 실패 시 자막도 지워버려!
+        } finally {
             setLoading(false);
         }
     }
+    
 
     // 이벤트 리스너 설정
     analyzeBtn.addEventListener('click', handleAnalyzeClick);
@@ -101,11 +144,7 @@ function initializeEventListeners() {
         }
     });
 
-    inputValue.addEventListener('paste', () => {
-        // URL 붙여넣기 후 약간의 지연을 두고 자동 분석
-        setTimeout(handleAnalyzeClick, 100);
-    });
-
+     
     inputValue.addEventListener('input', () => {
         errorMessage.style.display = 'none';
     });
@@ -116,42 +155,6 @@ function initializeEventListeners() {
         analyzeBtn.disabled = isLoading;
         inputValue.disabled = isLoading;
         analyzeBtn.textContent = isLoading ? '분석 중...' : '분석 시작';
-    }
-
-    // 결과 표시 함수
-    function displayResults(data) {
-        videoTitle.textContent = data.title || '제목 없음';
-        videoUrl.href = data.url || '#';
-        videoUrl.style.display = data.url ? 'inline-block' : 'none';
-        captionsOutput.textContent = data.captions || '자막이 없습니다.';
-        
-        resultsContainer.style.display = 'block';
-    }
-
-    // 테스트용 함수: URL에서 비디오 제목 추출 (실제 구현에서는 API 사용)
-    function getVideoTitle(url) {
-        try {
-            // YouTube URL에서 비디오 ID 추출
-            let videoId;
-            if (url.includes('youtube.com/watch')) {
-                videoId = new URL(url).searchParams.get('v');
-            } else if (url.includes('youtu.be/')) {
-                videoId = url.split('youtu.be/')[1]?.split('?')[0];
-            }
-            return videoId ? `Video ID: ${videoId}` : '알 수 없는 비디오';
-        } catch (e) {
-            return '비디오 제목 추출 실패';
-        }
-    }
-
-    // 테스트용 더미 자막 생성
-    function getDummyCaptions() {
-        return `[00:00:03] 안녕하세요, 유튜브 영상입니다.
-[00:00:07] 이것은 테스트 자막입니다.
-[00:00:12] 실제 구현에서는 YouTube API를 통해 자막을 가져올 예정입니다.
-[00:00:18] 현재는 기본 기능 동작 확인을 위한 더미 데이터입니다.
-[00:00:25] 이 기능이 정상 동작하면 다음 단계로 실제 API 연동을 진행하겠습니다.
-[00:00:32] 감사합니다.`;
     }
 }
 

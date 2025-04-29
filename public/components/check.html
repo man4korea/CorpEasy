@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>이벤트 테스트</title>
+</head>
+<body>
+  <div class="main-container">
+    <div class="title-container">
+      <h1>이벤트 테스트</h1>
+    </div>
+
+    <div class="form-card">
+      <div class="input-row">
+        <label class="form-label input-label">분석할 대상</label>
+        <input
+          type="text"
+          id="inputValue"
+          class="form-input"
+          placeholder="Enter 키를 눌러보세요"
+        />
+        <button id="analyzeBtn" type="button" class="btn btn-primary">
+          분석 시작
+        </button>
+      </div>
+    </div>
+
+    <!-- 결과 메시지 표시 -->
+    <div id="message" style="margin-top: 20px;"></div>
+  </div>
+
+  <script>
+    // 엔터키 눌렀을 때만 메시지 띄우기
+    const inputValue = document.getElementById('inputValue');
+    const message = document.getElementById('message');
+
+    // 엔터키 눌렀을 때
+    inputValue.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        message.textContent = 'Enter 키가 눌렸습니다!';
+      }
+    });
+
+    // 버튼 클릭했을 때
+    const analyzeBtn = document.getElementById('analyzeBtn');
+    analyzeBtn.addEventListener('click', () => {
+      message.textContent = '분석 시작 버튼이 클릭되었습니다!';
+    });
+  </script>
+</body>
+</html>

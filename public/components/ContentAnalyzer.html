@@ -1,97 +1,95 @@
-<!-- 파일 경로: public/components/ContentAnalyzer.html -->
-<!-- Create at 2504271702 Ver1.54 -->
+<!-- 📁 public/components/ContentAnalyzer.html -->
+<!-- Create at 2504292305 Ver1.18 -->
 
 <div class="main-container">
   <div class="title-container">
-    <h1>콘텐츠 상세분석기</h1>
+      <h1>콘텐츠 상세분석기</h1>
   </div>
-
+  
   <div class="form-card">
-    <div class="input-row">
-      <label class="form-label input-label">분석할 대상</label>
-      <input
-        type="text"
-        id="inputValue"
-        class="form-input"
-        placeholder="YouTube URL을 입력하세요"
-      />
-      <button id="analyzeBtn" type="button" class="btn btn-primary">
-        분석 시작
-        <span id="spinner" class="spinner" style="display: none; margin-left: 8px;"></span>
-      </button>
-    </div>
-    <div id="errorMessage" class="alert alert-danger" style="display: none; margin-top: 10px;"></div>
+      <div class="input-row">
+          <label class="form-label input-label">분석할 대상</label>
+          <input
+              type="text"
+              id="inputValue"
+              class="form-input"
+              placeholder="분석하실 YouTube URL을 입력해주세요"
+              onkeydown="if(event.key === 'Enter') { event.preventDefault(); startAnalysis(); }"
+          />
+          <button id="analyzeBtn" class="btn btn-primary" onclick="startAnalysis()">
+              분석 시작
+          </button>
+      </div>
+      <div id="errorMessage" class="error-message" style="display: none; color: var(--danger); margin-top: 8px; font-size: 14px; text-align: center;"></div>
   </div>
 
-  <div id="resultsContainer" class="content-container" style="display: none; margin-top: 20px;">
-    <div style="margin-bottom: 15px;">
-      <h2 id="videoTitle" style="margin-bottom: 5px;"></h2>
-      <a id="videoUrl" href="#" target="_blank" style="color: var(--primary); display: none;">동영상 보기</a>
-    </div>
-    <div class="captions-container" style="max-height: 500px; overflow-y: auto; border: 1px solid #e5e7eb; padding: 15px; border-radius: 5px; background-color: #f9fafb;">
-      <pre id="captionsOutput" style="white-space: pre-wrap; font-size: 14px; line-height: 1.6; margin: 0;"></pre>
-    </div>
+  <div id="resultsContainer" class="card results-container" style="display: none;">
+      <div class="card-header">
+          <h2 id="videoTitle" class="card-title">비디오 제목</h2>
+          <a id="videoUrl" href="#" target="_blank" class="link">원본 URL 보기</a>
+      </div>
+
+      <div class="captions-container" style="margin-top: 20px; max-height: 500px; overflow-y: auto; padding: 20px; background-color: var(--bg-secondary); border-radius: var(--radius-md);">
+          <pre id="captionsOutput" class="captions-text" style="white-space: pre-wrap; font-family: 'Noto Sans KR', sans-serif; line-height: 1.6;"></pre>
+      </div>
   </div>
 </div>
 
-<script>
-// ContentAnalyzer 초기화 함수
-function initializeContentAnalyzer() {
-  const inputValue = document.getElementById('inputValue');
-  const analyzeBtn = document.getElementById('analyzeBtn');
-  const resultsContainer = document.getElementById('resultsContainer');
-
-  // DOM 요소 확인
-  if (!inputValue || !analyzeBtn || !resultsContainer) {
-    console.error('ContentAnalyzer: 필요한 DOM 요소를 찾을 수 없습니다');
-    return;
-  }
-
-  // 사용자 입력 현재값 검사 구문 수정
-  function callHandleAnalyzeClick(event) {
-    event.preventDefault();
-    const value = inputValue.value.trim();
-    if (value) {
-      if (typeof window.handleAnalyzeClick === 'function') {
-        window.handleAnalyzeClick();
-      } else {
-        console.error('ContentAnalyzer: 함수(handleAnalyzeClick)를 찾을 수 없습니다');
-        alert('자막 추출 기능을 로드할 수 없습니다. 페이지를 새로고침 해보세요.');
-      }
-    }
-  }
-
-  // 이벤트 리스너 연결
-  inputValue.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-      callHandleAnalyzeClick(e);
-    }
-  });
-
-  analyzeBtn.addEventListener('click', (e) => {
-    callHandleAnalyzeClick(e);
-  });
+<style>
+/* 로딩 스피너 스타일 */
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid rgba(0, 123, 255, 0.2);
+    border-radius: 50%;
+    border-top-color: var(--primary);
+    animation: spin 1s linear infinite;
 }
 
-// ✅ 여기 추가!!!
-window.handleAnalyzeClick = handleAnalyzeClick;
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
 
-// 초기화 클래스 존재 검사 후 호출
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
 
-document.addEventListener('DOMContentLoaded', () => {
-  if (typeof window.initializeContentAnalyzer === 'function') {
-    window.initializeContentAnalyzer();
-  } else {
-    console.warn('ContentAnalyzer 초기화 함수가 없습니다.');
-  }
-});
+.results-container {
+    animation: slideUp 0.5s ease-out;
+}
+</style>
 
-window.addEventListener('component-loaded', () => {
-  if (typeof window.initializeContentAnalyzer === 'function') {
-    window.initializeContentAnalyzer();
-  }
-});
+<script>
+// 페이지 로드 시 실행 - 이벤트 리스너 설정 추가 확인용
+window.onload = function() {
+    console.log('페이지 완전히 로드됨 - window.onload');
+    
+    // 엔터 키 이벤트 리스너 중복 등록 (혹시 인라인 이벤트가 작동하지 않을 경우 대비)
+    const inputElement = document.getElementById('inputValue');
+    if (inputElement) {
+        console.log('입력 필드 참조 성공');
+        inputElement.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                console.log('Enter 키 감지됨 (addEventListener)');
+                e.preventDefault();
+                startAnalysis();
+            }
+        });
+        
+        inputElement.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                console.log('Enter 키 감지됨 (keydown)');
+                e.preventDefault();
+                startAnalysis();
+            }
+        });
+        
+        console.log('입력 필드에 키 이벤트 리스너 등록 완료');
+    } else {
+        console.error('입력 필드를 찾을 수 없음');
+    }
+};
+
 </script>
-
-<!-- 외부 JavaScript 파일 로드 -->
-<script src="/js/contentAnalyzer.js"></script>
+<script src="/js/ContentAnalyzer.js"></script>

@@ -1,5 +1,7 @@
 {
   "projects": {
-    "default": "corpeasy-dev"
-  }
+    "default": "corpeasy-c69bb"
+  },
+  "targets": {},
+  "etags": {}
 }

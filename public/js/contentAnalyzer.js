@@ -1,177 +1,168 @@
-// 📁 public/js/contentAnalyzer.js
-// Create at 2504262310 Ver1.4
+// 📁 public/js/ContentAnalyzer.js
+// Create at 2504291835 Ver1.4
 
-/**
- * 콘텐츠 상세분석기 - YouTube 자막 추출 기능
- * 
- * 이 모듈은 YouTube URL을 입력받아 자막을 추출하는 기능을 담당합니다.
- */
+// 로컬과 배포 환경 구분 (localhost, 127.0.0.1, 0.0.0.0 모두 포함)
+const isLocalhost = ['localhost', '127.0.0.1', '0.0.0.0'].includes(window.location.hostname);
+let proxyUrlBase = isLocalhost ? 'http://localhost:3002' : '';
 
-// 유틸리티 함수들을 먼저 정의
-function decodeHtmlEntities(text) {
-    const entities = {
-        '&quot;': '"',
-        '&amp;': '&',
-        '&lt;': '<',
-        '&gt;': '>',
-        '&#39;': "'",
-        '&apos;': "'",
-    };
-    return text.replace(/&quot;|&amp;|&lt;|&gt;|&#39;|&apos;/g, match => entities[match]);
+// 로딩 인디케이터 생성 함수
+function createLoadingIndicator() {
+    const loadingDiv = document.createElement('div');
+    loadingDiv.id = 'loadingIndicator';
+    loadingDiv.innerHTML = '<div class="spinner"></div><p>자막을 가져오는 중...</p>';
+    loadingDiv.style.cssText = `
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        margin: 20px 0;
+        padding: 20px;
+    `;
+    return loadingDiv;
 }
 
-function formatTime(ms) {
-    const seconds = Math.floor(ms / 1000);
-    const h = Math.floor(seconds / 3600);
-    const m = Math.floor((seconds % 3600) / 60);
-    const s = seconds % 60;
-    return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+// 에러 메시지 표시 함수
+function showError(message) {
+    const errorMessage = document.getElementById('errorMessage');
+    errorMessage.textContent = message;
+    errorMessage.style.display = 'block';
+
+    setTimeout(() => {
+        errorMessage.style.display = 'none';
+    }, 3000);
 }
 
-// 이벤트 리스너 초기화 함수
-function initializeEventListeners() {
-    console.log('ContentAnalyzer: 이벤트 리스너 초기화');
+// YouTube URL 유효성 검사 함수
+function isValidYoutubeUrl(url) {
+    const pattern = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+/;
+    return pattern.test(url);
+}
 
-    // DOM 요소 참조
+// YouTube 비디오 ID 추출 함수
+function extractVideoId(url) {
+    try {
+        let videoId = null;
+        const urlObj = new URL(url);
+
+        if (urlObj.hostname === 'youtu.be') {
+            videoId = urlObj.pathname.substring(1);
+        } else if (urlObj.hostname === 'www.youtube.com' || urlObj.hostname === 'youtube.com') {
+            if (urlObj.pathname === '/watch') {
+                videoId = urlObj.searchParams.get('v');
+            } else if (urlObj.pathname.startsWith('/embed/')) {
+                videoId = urlObj.pathname.split('/')[2];
+            } else if (urlObj.pathname.startsWith('/v/')) {
+                videoId = urlObj.pathname.split('/')[2];
+            }
+        }
+
+        return videoId;
+    } catch (error) {
+        console.error('URL 파싱 오류:', error);
+        return null;
+    }
+}
+
+// 자막 가져오기 함수
+async function getTranscript(videoId) {
+    try {
+        console.log('자막 가져오기 시작:', videoId);
+
+        const proxyUrl = `${proxyUrlBase}/api/youtube-proxy?videoUrl=https://www.youtube.com/watch?v=${videoId}`;
+        const response = await fetch(proxyUrl);
+
+        if (!response.ok) {
+            throw new Error('YouTube 페이지를 가져오는데 실패했습니다.');
+        }
+
+        const pageText = await response.text();
+        const titleMatch = pageText.match(/<title>(.*?)<\/title>/);
+        const title = titleMatch ? titleMatch[1].replace(' - YouTube', '') : '제목 없음';
+
+        const captionTracks = pageText.match(/"captionTracks":\[(.*?)\]/);
+        if (!captionTracks) throw new Error('자막 트랙을 찾을 수 없습니다.');
+
+        const tracks = JSON.parse(`[${captionTracks[1]}]`);
+
+        let selectedTrack = tracks.find(track => track.languageCode === 'ko' && (track.kind === 'asr' || track.kind === 'standard'));
+        let languageInfo = '한국어';
+
+        if (!selectedTrack) {
+            selectedTrack = tracks.find(track => track.languageCode === 'en' && (track.kind === 'asr' || track.kind === 'standard'));
+            if (!selectedTrack) {
+                if (tracks.length > 0) {
+                    selectedTrack = tracks[0];
+                    languageInfo = selectedTrack.name?.simpleText || '자동 선택';
+                } else {
+                    throw new Error('사용 가능한 자막이 없습니다.');
+                }
+            } else {
+                languageInfo = '영어';
+            }
+        }
+
+        const transcriptUrl = selectedTrack.baseUrl + '&fmt=json3';
+        const transcriptResponse = await fetch(transcriptUrl);
+        if (!transcriptResponse.ok) throw new Error('자막을 가져오는데 실패했습니다.');
+
+        const transcriptData = await transcriptResponse.json();
+        const segments = transcriptData.events
+            .filter(event => event.segs && event.segs.length > 0)
+            .map(event => event.segs.map(seg => seg.utf8).join(''))
+            .filter(text => text.trim());
+
+        return {
+            title: title,
+            captions: segments.join('\n'),
+            language: languageInfo
+        };
+    } catch (error) {
+        console.error('자막 가져오기 실패:', error);
+        throw error;
+    }
+}
+
+// 분석 시작 함수
+async function startAnalysis() {
     const inputValue = document.getElementById('inputValue');
-    const analyzeBtn = document.getElementById('analyzeBtn');
-    const spinner = document.getElementById('spinner');
+    const errorMessage = document.getElementById('errorMessage');
     const resultsContainer = document.getElementById('resultsContainer');
     const videoTitle = document.getElementById('videoTitle');
     const videoUrl = document.getElementById('videoUrl');
     const captionsOutput = document.getElementById('captionsOutput');
-    const errorMessage = document.getElementById('errorMessage');
 
-    // DOM 요소 존재 확인
-    if (!inputValue || !analyzeBtn || !spinner || !resultsContainer || 
-        !videoTitle || !videoUrl || !captionsOutput || !errorMessage) {
-        console.error('ContentAnalyzer: 필요한 DOM 요소를 찾을 수 없습니다');
+    const url = inputValue.value.trim();
+    if (!url) {
+        showError('URL을 입력해주세요.');
+        return;
+    }
+    if (!isValidYoutubeUrl(url)) {
+        showError('유효한 YouTube URL이 아닙니다.');
         return;
     }
 
-    // 분석 버튼 클릭 이벤트 핸들러
-    async function handleAnalyzeClick() {
-        
-        const url = inputValue.value.trim();
-        if (!url) {
-            errorMessage.textContent = 'URL을 입력해주세요.';
-            errorMessage.style.display = 'block';
-            inputValue.focus();
-            return;
-        }
-
-        if (!url.includes('youtube.com/watch') && !url.includes('youtu.be/')) {
-            errorMessage.textContent = '유효한 YouTube URL을 입력해주세요.';
-            errorMessage.style.display = 'block';
-            return;
-        }
-
-        setLoading(true);
-        errorMessage.style.display = 'none';
-        resultsContainer.style.display = 'none';
-        
-        try {
-            // 비디오 ID 추출
-            let videoId;
-            if (url.includes('youtube.com/watch')) {
-                videoId = new URL(url).searchParams.get('v');
-            } else if (url.includes('youtu.be/')) {
-                videoId = url.split('youtu.be/')[1]?.split('?')[0];
-            }
-            if (!videoId) throw new Error('유효한 YouTube URL이 아닙니다.');
-
-            // 유튜브 페이지에서 자막 정보 가져오기
-            // YouTube fetch proxy URL 설정
-            const isLocal = window.location.hostname === 'localhost';
-            const proxyBaseUrl = isLocal 
-            ? 'http://localhost:3002/api/youtube-proxy'
-            : '/api/youtube-proxy'; // 배포 서버에서는 상대 경로 사용
-
-            // 분석 버튼 클릭 이벤트 핸들러 안에
-            const proxyUrl = `${proxyBaseUrl}?videoUrl=https://www.youtube.com/watch?v=${videoId}`;
-            const pageResponse = await fetch(proxyUrl);
-            
-            if (!pageResponse.ok) throw new Error('YouTube 페이지를 불러올 수 없습니다.');
-            const pageText = await pageResponse.text();
-
-            // 동영상 제목 추출
-            const titleMatch = pageText.match(/"title":"(.*?)"/);
-            const title = titleMatch ? decodeHtmlEntities(titleMatch[1]) : '제목 없음';
-
-            // 자막 트랙 찾기
-            const captionTracks = pageText.match(/"captionTracks":\[(.*?)\]/);
-            if (!captionTracks) throw new Error('자막 트랙을 찾을 수 없습니다.');
-            const tracks = JSON.parse(`[${captionTracks[1]}]`);
-            // 한국어 자막 찾기
-            const koreanTrack = tracks.find(track => track.languageCode === 'ko' && (track.kind === 'asr' || track.kind === 'standard'));
-            if (!koreanTrack) throw new Error('한국어 자막을 찾을 수 없습니다.');
-            // 자막 URL 생성
-            const transcriptUrl = koreanTrack.baseUrl + '&fmt=json3';
-            // 자막 가져오기
-            const transcriptResponse = await fetch(transcriptUrl);
-            if (!transcriptResponse.ok) throw new Error('자막을 가져오는데 실패했습니다.');
-            const transcriptData = await transcriptResponse.json();
-            // 자막 텍스트 추출
-            const segments = transcriptData.events
-                .filter(event => event.segs && event.segs.length > 0)
-                .map(event => event.segs.map(seg => seg.utf8).join(''))
-                .filter(text => text.trim());
-            // 결과 표시
-            videoTitle.textContent = title;
-            videoUrl.href = url;
-            videoUrl.style.display = url ? 'inline-block' : 'none';
-            captionsOutput.textContent = segments.length ? segments.join('\n') : '자막이 없습니다.';
-            resultsContainer.style.display = 'block';
-        } catch (error) {
-            console.error('처리 중 오류 발생:', error);
-            errorMessage.textContent = error.message || '처리 중 오류가 발생했습니다.';
-            errorMessage.style.display = 'block';
-            resultsContainer.style.display = 'none';
-            captionsOutput.textContent = ''; // ✅ 실패 시 자막도 지워버려!
-        } finally {
-            setLoading(false);
-        }
+    const videoId = extractVideoId(url);
+    if (!videoId) {
+        showError('YouTube 비디오 ID를 추출할 수 없습니다.');
+        return;
     }
-    
 
-    // 이벤트 리스너 설정
-    analyzeBtn.addEventListener('click', handleAnalyzeClick);
-    
-    inputValue.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            handleAnalyzeClick();
-        }
-    });
+    errorMessage.style.display = 'none';
+    resultsContainer.style.display = 'none';
+    const loadingIndicator = createLoadingIndicator();
+    document.querySelector('.main-container').appendChild(loadingIndicator);
 
-     
-    inputValue.addEventListener('input', () => {
-        errorMessage.style.display = 'none';
-    });
+    try {
+        const { title, captions, language } = await getTranscript(videoId);
+        videoTitle.textContent = title + (language ? ` (${language} 자막)` : '');
+        videoUrl.textContent = url;
+        videoUrl.href = url;
+        captionsOutput.textContent = captions;
 
-    // 로딩 상태 설정 함수
-    function setLoading(isLoading) {
-        spinner.style.display = isLoading ? 'inline-block' : 'none';
-        analyzeBtn.disabled = isLoading;
-        inputValue.disabled = isLoading;
-        analyzeBtn.textContent = isLoading ? '분석 중...' : '분석 시작';
+        document.querySelector('.main-container').removeChild(loadingIndicator);
+        resultsContainer.style.display = 'block';
+    } catch (error) {
+        document.querySelector('.main-container').removeChild(loadingIndicator);
+        showError(error.message || '자막을 가져오는데 실패했습니다.');
     }
-}
-
-// 컴포넌트 로드 시 초기화
-document.addEventListener('DOMContentLoaded', function() {
-    setTimeout(initializeEventListeners, 100);
-});
-
-// 컴포넌트가 동적으로 로드될 때 초기화
-window.addEventListener('component-loaded', function() {
-    setTimeout(initializeEventListeners, 100);
-});
-
-// 전역 스코프에 초기화 함수 노출
-window.initializeContentAnalyzer = initializeEventListeners;
-
-// 페이지 로드 시 직접 호출 시도
-if (document.readyState === 'complete' || document.readyState === 'interactive') {
-    setTimeout(initializeEventListeners, 100);
 }

@@ -1,5 +1,5 @@
 # 📁 .github/workflows/ci-cd-deploy.yml
-# Create at 2504251100 Ver1.3
+# Create at 2504251100 Ver1.4
 
 name: CI/CD Build & Deploy
 
@@ -13,11 +13,14 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: 🛓️ Checkout code
+      - name: 📓️ Checkout code
         uses: actions/checkout@v3
 
       # public/ 폴더에 정적 리소스가 포함되어 있습니다.
       # 별도 Prepare 단계 없이 바로 배포합니다.
+
+      - name: 🔍 Check functions folder contents
+        run: ls -al ./functions
 
       - name: 🔑 Deploy to Firebase Hosting + Functions
         uses: w9jds/firebase-action@v2.2.0

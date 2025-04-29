@@ -1,5 +1,5 @@
 # 📁 .github/workflows/ci-cd-deploy.yml
-# Create at 2504251100 Ver1.4
+# Create at 2504251100 Ver1.5
 
 name: CI/CD Build & Deploy
 
@@ -15,6 +15,9 @@ jobs:
     steps:
       - name: 📓️ Checkout code
         uses: actions/checkout@v3
+
+      - name: 📦 Install Firebase Functions dependencies
+        run: cd functions && npm install
 
       # public/ 폴더에 정적 리소스가 포함되어 있습니다.
       # 별도 Prepare 단계 없이 바로 배포합니다.

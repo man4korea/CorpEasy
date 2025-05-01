@@ -2,10 +2,8 @@
 // Create at 2504291835 Ver1.4
 
 // 로컬과 배포 환경 구분 (localhost, 127.0.0.1, 0.0.0.0 모두 포함)
-if (typeof isLocalhost === 'undefined') {
-      var isLocalhost = ['localhost', '127.0.0.1', '0.0.0.0'].includes(window.location.hostname);
-     }
-let proxyUrlBase = isLocalhost ? 'http://localhost:3002' : '';
+window.isLocalhost = window.isLocalhost ?? ['localhost', '127.0.0.1', '0.0.0.0'].includes(window.location.hostname);
+let proxyUrlBase = window.isLocalhost ? 'http://localhost:3002' : '';
 
 // 로딩 인디케이터 생성 함수
 function createLoadingIndicator() {
@@ -70,7 +68,8 @@ async function getTranscript(videoId) {
     try {
         console.log('자막 가져오기 시작:', videoId);
 
-        const proxyUrl = `${proxyUrlBase}/api/youtube-proxy?videoUrl=https://www.youtube.com/watch?v=${videoId}`;
+        const videoWatchUrl = `https://www.youtube.com/watch?v=${videoId}`;
+        const proxyUrl = `${proxyUrlBase}/api/youtube-proxy?videoUrl=${encodeURIComponent(videoWatchUrl)}`;
         const response = await fetch(proxyUrl);
 
         if (!response.ok) {

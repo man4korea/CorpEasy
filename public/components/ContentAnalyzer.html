@@ -1,95 +1,144 @@
 <!-- 📁 public/components/ContentAnalyzer.html -->
-<!-- Create at 2504292305 Ver1.18 -->
+<!-- Create at 2505011730 Ver1.23 -->
 
 <div class="main-container">
-  <div class="title-container">
-      <h1>콘텐츠 상세분석기</h1>
+    <div class="title-container">
+        <h1>콘텐츠 상세분석기</h1>
+    </div>
+    
+    <div class="form-card">
+        <div class="input-row">
+            <label class="form-label input-label">분석할 대상</label>
+            <input
+                type="text"
+                id="inputValue"
+                class="form-input"
+                placeholder="분석하실 YouTube URL을 입력해주세요"
+                onkeydown="if(event.key === 'Enter') { event.preventDefault(); window.startAnalysis && window.startAnalysis(); }"
+            />
+            <button id="analyzeBtn" class="btn btn-primary" onclick="window.startAnalysis && window.startAnalysis()">
+                분석 시작
+            </button>
+        </div>
+        <div id="errorMessage" class="error-message" style="display: none; color: var(--danger); margin-top: 8px; font-size: 14px; text-align: center;"></div>
+    </div>
+  
+    <div id="resultsContainer" class="card results-container" style="display: none;">
+        <div class="card-header">
+            <h2 id="videoTitle" class="card-title">비디오 제목</h2>
+            <a id="videoUrl" href="#" target="_blank" class="link">원본 URL 보기</a>
+        </div>
+  
+        <div class="captions-container" style="margin-top: 20px; max-height: 500px; overflow-y: auto; padding: 20px; background-color: var(--bg-secondary); border-radius: var(--radius-md);">
+            <pre id="captionsOutput" class="captions-text" style="white-space: pre-wrap; font-family: 'Noto Sans KR', sans-serif; line-height: 1.6;"></pre>
+        </div>
+    </div>
   </div>
   
-  <div class="form-card">
-      <div class="input-row">
-          <label class="form-label input-label">분석할 대상</label>
-          <input
-              type="text"
-              id="inputValue"
-              class="form-input"
-              placeholder="분석하실 YouTube URL을 입력해주세요"
-              onkeydown="if(event.key === 'Enter') { event.preventDefault(); startAnalysis(); }"
-          />
-          <button id="analyzeBtn" class="btn btn-primary" onclick="startAnalysis()">
-              분석 시작
-          </button>
-      </div>
-      <div id="errorMessage" class="error-message" style="display: none; color: var(--danger); margin-top: 8px; font-size: 14px; text-align: center;"></div>
-  </div>
-
-  <div id="resultsContainer" class="card results-container" style="display: none;">
-      <div class="card-header">
-          <h2 id="videoTitle" class="card-title">비디오 제목</h2>
-          <a id="videoUrl" href="#" target="_blank" class="link">원본 URL 보기</a>
-      </div>
-
-      <div class="captions-container" style="margin-top: 20px; max-height: 500px; overflow-y: auto; padding: 20px; background-color: var(--bg-secondary); border-radius: var(--radius-md);">
-          <pre id="captionsOutput" class="captions-text" style="white-space: pre-wrap; font-family: 'Noto Sans KR', sans-serif; line-height: 1.6;"></pre>
-      </div>
-  </div>
-</div>
-
-<style>
-/* 로딩 스피너 스타일 */
-.spinner {
-    width: 40px;
-    height: 40px;
-    border: 4px solid rgba(0, 123, 255, 0.2);
-    border-radius: 50%;
-    border-top-color: var(--primary);
-    animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-    to { transform: rotate(360deg); }
-}
-
-@keyframes slideUp {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-.results-container {
-    animation: slideUp 0.5s ease-out;
-}
-</style>
-
-<script>
-// 페이지 로드 시 실행 - 이벤트 리스너 설정 추가 확인용
-window.onload = function() {
-    console.log('페이지 완전히 로드됨 - window.onload');
-    
-    // 엔터 키 이벤트 리스너 중복 등록 (혹시 인라인 이벤트가 작동하지 않을 경우 대비)
-    const inputElement = document.getElementById('inputValue');
-    if (inputElement) {
-        console.log('입력 필드 참조 성공');
-        inputElement.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                console.log('Enter 키 감지됨 (addEventListener)');
-                e.preventDefault();
-                startAnalysis();
-            }
-        });
-        
-        inputElement.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') {
-                console.log('Enter 키 감지됨 (keydown)');
-                e.preventDefault();
-                startAnalysis();
-            }
-        });
-        
-        console.log('입력 필드에 키 이벤트 리스너 등록 완료');
-    } else {
-        console.error('입력 필드를 찾을 수 없음');
-    }
-};
-
-</script>
-<script src="/js/contentAnalyzer.js"></script>
+  <style>
+  /* 로딩 스피너 스타일 */
+  .spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid rgba(0, 123, 255, 0.2);
+      border-radius: 50%;
+      border-top-color: var(--primary);
+      animation: spin 1s linear infinite;
+  }
+  
+  @keyframes spin {
+      to { transform: rotate(360deg); }
+  }
+  
+  @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+  }
+  
+  .results-container {
+      animation: slideUp 0.5s ease-out;
+  }
+  </style>
+  
+  <script>
+  // 페이지가 로드되면 엔터 키 이벤트 리스너 추가 (인라인 속성 백업)
+  document.addEventListener('DOMContentLoaded', function() {
+      console.log('ContentAnalyzer 컴포넌트 DOM 로드됨');
+      
+      // 엔터 키 이벤트 리스너 추가
+      const inputElement = document.getElementById('inputValue');
+      if (inputElement) {
+          console.log('입력 필드에 키 이벤트 리스너 등록');
+          
+          // keydown 이벤트
+          inputElement.addEventListener('keydown', function(e) {
+              if (e.key === 'Enter') {
+                  console.log('엔터 키 감지됨 (keydown)');
+                  e.preventDefault();
+                  if (window.startAnalysis) {
+                      window.startAnalysis();
+                  } else {
+                      console.error('startAnalysis 함수를 찾을 수 없음');
+                  }
+              }
+          });
+          
+          // keypress 이벤트 (이중 보호)
+          inputElement.addEventListener('keypress', function(e) {
+              if (e.key === 'Enter') {
+                  console.log('엔터 키 감지됨 (keypress)');
+                  e.preventDefault();
+                  if (window.startAnalysis) {
+                      window.startAnalysis();
+                  } else {
+                      console.error('startAnalysis 함수를 찾을 수 없음');
+                  }
+              }
+          });
+      } else {
+          console.error('입력 필드 요소를 찾을 수 없음 (id="inputValue")');
+      }
+      
+      // 분석 버튼 클릭 이벤트 리스너 추가
+      const analyzeBtn = document.getElementById('analyzeBtn');
+      if (analyzeBtn) {
+          console.log('분석 버튼에 클릭 이벤트 리스너 등록');
+          analyzeBtn.addEventListener('click', function() {
+              if (window.startAnalysis) {
+                  window.startAnalysis();
+              } else {
+                  console.error('startAnalysis 함수를 찾을 수 없음');
+              }
+          });
+      } else {
+          console.error('분석 버튼 요소를 찾을 수 없음 (id="analyzeBtn")');
+      }
+  });
+  
+  // 컴포넌트 로드 완료 이벤트 추가 감지
+  window.addEventListener('component-loaded', function() {
+      console.log('component-loaded 이벤트 감지됨, 이벤트 리스너 재초기화');
+      
+      setTimeout(function() {
+          // 엔터 키 이벤트 리스너 추가
+          const inputElement = document.getElementById('inputValue');
+          if (inputElement) {
+              console.log('입력 필드에 키 이벤트 리스너 등록 (component-loaded)');
+              
+              // keydown 이벤트
+              inputElement.addEventListener('keydown', function(e) {
+                  if (e.key === 'Enter') {
+                      console.log('엔터 키 감지됨 (keydown, component-loaded)');
+                      e.preventDefault();
+                      if (window.startAnalysis) {
+                          window.startAnalysis();
+                      }
+                  }
+              });
+          }
+      }, 100);
+  });
+  </script>
+  
+  <!-- 외부 스크립트 참조 -->
+  <script src="/js/contentAnalyzer.js"></script>

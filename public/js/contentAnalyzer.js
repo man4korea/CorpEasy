@@ -2,7 +2,9 @@
 // Create at 2504291835 Ver1.4
 
 // 로컬과 배포 환경 구분 (localhost, 127.0.0.1, 0.0.0.0 모두 포함)
-const isLocalhost = ['localhost', '127.0.0.1', '0.0.0.0'].includes(window.location.hostname);
+if (typeof isLocalhost === 'undefined') {
+      var isLocalhost = ['localhost', '127.0.0.1', '0.0.0.0'].includes(window.location.hostname);
+     }
 let proxyUrlBase = isLocalhost ? 'http://localhost:3002' : '';
 
 // 로딩 인디케이터 생성 함수

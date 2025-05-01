@@ -1,5 +1,5 @@
 // 📁 functions/index.js
-// 250428 VER1.0
+// 250428 VER1.1
 // TEMP: force trigger git
 
 import { onRequest } from 'firebase-functions/v2/https';
@@ -10,14 +10,18 @@ import fetch from 'node-fetch';
 const app = express();
 app.use(cors());
 
-// ✅ [추가] YouTube Proxy API
+// ✅ YouTube Proxy API
 app.get('/api/youtube-proxy', async (req, res) => {
   const { videoUrl } = req.query;
   if (!videoUrl) {
     return res.status(400).json({ error: 'Missing videoUrl' });
   }
   try {
-    const youtubeResponse = await fetch(videoUrl);
+    const youtubeResponse = await fetch(videoUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36'
+      }
+    });
     const text = await youtubeResponse.text();
     res.send(text);
   } catch (error) {
